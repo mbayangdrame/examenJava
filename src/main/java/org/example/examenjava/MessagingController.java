@@ -10,6 +10,10 @@ import javafx.scene.layout.Region;
 import javafx.geometry.Pos;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.example.examenjava.Repository.Database;
+import org.example.examenjava.Entity.User;
+import org.example.examenjava.Entity.Message;
+import java.util.List;
 
 public class MessagingController {
     @FXML
@@ -42,6 +46,8 @@ public class MessagingController {
     @FXML
     private Button clearButton;
 
+    private User currentUser;
+
     @FXML
     public void initialize() {
         setupUserList();
@@ -49,6 +55,11 @@ public class MessagingController {
         setupMessageField();
         setupClearButton();
         currentUserLabel.setText("Utilisateur: Admin");
+    }
+
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        currentUserLabel.setText("Utilisateur: " + user.getUsername());
     }
 
     private void setupUserList() {
@@ -101,22 +112,38 @@ public class MessagingController {
 
     @FXML
     protected void onSendButtonClick() {
-        String message = messageField.getText();
-        String selectedUser = userListView.getSelectionModel().getSelectedItem();
+        String contenu = messageField.getText();
+        String selectedUsername = userListView.getSelectionModel().getSelectedItem();
 
-        if (message == null || message.trim().isEmpty()) {
-            showAlert("Erreur", "Veuillez écrire un message");
+        if (currentUser == null || currentUser.getStatus() != User.Status.ONLINE) {
+            showAlert("Erreur", "Vous devez être connecté pour envoyer un message.");
             return;
         }
-
-        if (selectedUser == null) {
-            showAlert("Erreur", "Veuillez sélectionner un utilisateur");
+        if (contenu == null || contenu.trim().isEmpty()) {
+            showAlert("Erreur", "Veuillez écrire un message.");
             return;
         }
-
-        // Ajouter la bulle pour le message envoyé (alignée à droite)
-        addMessageBubble("Vous", message, true);
-        // Ici on pourrait envoyer le message au backend / save en base
+        if (contenu.length() > 1000) {
+            showAlert("Erreur", "Le message ne doit pas dépasser 1000 caractères.");
+            return;
+        }
+        if (selectedUsername == null) {
+            showAlert("Erreur", "Veuillez sélectionner un utilisateur.");
+            return;
+        }
+        User receiver = Database.getInstance().findUserByUsername(selectedUsername);
+        if (receiver == null) {
+            showAlert("Erreur", "Le destinataire n'existe pas.");
+            return;
+        }
+        Message message = new Message(currentUser, receiver, contenu);
+        if (receiver.getStatus() == User.Status.ONLINE) {
+            message.setStatut(Message.Statut.RECU);
+        } else {
+            message.setStatut(Message.Statut.ENVOYE);
+        }
+        Database.getInstance().saveMessage(message);
+        addMessageBubble("Vous", contenu, true);
         messageField.clear();
         messageField.requestFocus();
     }
@@ -137,11 +164,30 @@ public class MessagingController {
         }
     }
 
+    @FXML
+    protected void onShowMembersButtonClick() {
+        if (currentUser == null || currentUser.getRole() != User.Role.ORGANISATEUR) {
+            showAlert("Accès refusé", "Seuls les organisateurs peuvent consulter la liste des membres.");
+            return;
+        }
+        List<User> membres = Database.getInstance().getAllUsers();
+        StringBuilder sb = new StringBuilder();
+        for (User u : membres) {
+            sb.append(u.getUsername()).append(" (role: ").append(u.getRole()).append(")\n");
+        }
+        showAlert("Liste des membres", sb.toString());
+    }
+
     private void loadChatHistory(String username) {
-        // Exemple de chargement d'historique (messages alternés)
-        addMessageBubble("Alice", "[14:30] Bonjour, comment ça va?", false);
-        addMessageBubble("Vous", "[14:31] Bien, et toi?", true);
-        addMessageBubble("Alice", "[14:32] Super! On se voit ce soir?", false);
+        User receiver = Database.getInstance().findUserByUsername(username);
+        if (currentUser == null || receiver == null) return;
+        List<Message> messages = Database.getInstance().getMessagesBetweenUsers(currentUser.getId(), receiver.getId());
+        messagesContainer.getChildren().clear();
+        for (Message msg : messages) {
+            boolean isOwn = msg.getSender().getId().equals(currentUser.getId());
+            String text = "[" + msg.getDateEnvoi().toLocalTime() + "] " + msg.getContenu();
+            addMessageBubble(isOwn ? "Vous" : receiver.getUsername(), text, isOwn);
+        }
     }
 
     private void addMessageBubble(String sender, String text, boolean isOwn) {

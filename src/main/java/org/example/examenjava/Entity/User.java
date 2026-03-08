@@ -27,6 +27,27 @@ public class User {
     @Transient
     private boolean selected;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
+    @Column(nullable = false, updatable = false)
+    private java.time.LocalDateTime dateCreation;
+
+    // Enum pour le rôle
+    public enum Role {
+        ORGANISATEUR, MEMBRE, BENEVOLE
+    }
+
+    // Enum pour le statut
+    public enum Status {
+        ONLINE, OFFLINE
+    }
+
     // Getters and Setters
     public Long getId() {
         return id;
@@ -82,5 +103,29 @@ public class User {
 
     public void setSelected(boolean selected) {
         this.selected = selected;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public java.time.LocalDateTime getDateCreation() {
+        return dateCreation;
+    }
+
+    public void setDateCreation(java.time.LocalDateTime dateCreation) {
+        this.dateCreation = dateCreation;
     }
 }

@@ -11,6 +11,15 @@ public class Database {
     private EntityManagerFactory emf;
     private EntityManager em;
 
+    private static Database instance;
+
+    public static Database getInstance() {
+        if (instance == null) {
+            instance = new Database();
+        }
+        return instance;
+    }
+
     public Database() {
         try {
             emf = Persistence.createEntityManagerFactory("default");
@@ -91,9 +100,9 @@ public class Database {
     public List<Message> getMessagesBetweenUsers(Long userId1, Long userId2) {
         return em.createQuery(
                 "SELECT m FROM Message m WHERE " +
-                "(m.sender.id = :user1 AND m.recipient.id = :user2) OR " +
-                "(m.sender.id = :user2 AND m.recipient.id = :user1) " +
-                "ORDER BY m.timestamp ASC",
+                "(m.sender.id = :user1 AND m.receiver.id = :user2) OR " +
+                "(m.sender.id = :user2 AND m.receiver.id = :user1) " +
+                "ORDER BY m.dateEnvoi ASC",
                 Message.class)
                 .setParameter("user1", userId1)
                 .setParameter("user2", userId2)
@@ -102,16 +111,17 @@ public class Database {
 
     public List<Message> getUnreadMessages(Long userId) {
         return em.createQuery(
-                "SELECT m FROM Message m WHERE m.recipient.id = :userId AND m.isRead = false",
+                "SELECT m FROM Message m WHERE m.receiver.id = :userId AND m.statut <> :statutLu",
                 Message.class)
                 .setParameter("userId", userId)
+                .setParameter("statutLu", Message.Statut.LU)
                 .getResultList();
     }
 
     public void markMessageAsRead(Message message) {
         try {
             em.getTransaction().begin();
-            message.setIsRead(Boolean.TRUE);
+            message.setStatut(Message.Statut.LU);
             em.merge(message);
             em.getTransaction().commit();
         } catch (Exception e) {

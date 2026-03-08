@@ -10,6 +10,8 @@ import javafx.scene.control.Button;
 import javafx.stage.Stage;
 import javafx.geometry.Pos;
 import javafx.scene.layout.VBox;
+import org.example.examenjava.Repository.Database;
+import org.example.examenjava.Entity.User;
 
 public class LoginController {
     @FXML
@@ -25,6 +27,11 @@ public class LoginController {
     private Button loginButton;
 
     @FXML
+    private Button registerLinkButton;
+
+    private User currentUser;
+
+    @FXML
     protected void onLoginButtonClick() {
         String username = usernameField.getText();
         String password = passwordField.getText();
@@ -33,13 +40,24 @@ public class LoginController {
             errorLabel.setText("Veuillez remplir tous les champs");
             return;
         }
-
-        // Simulation d'authentification (à remplacer par une vraie logique)
-        if (username.equals("admin") && password.equals("123456")) {
-            openMessagingApplication();
-        } else {
-            errorLabel.setText("Identifiants invalides");
+        User user = Database.getInstance().findUserByUsername(username);
+        if (user == null) {
+            errorLabel.setText("Utilisateur inconnu");
+            return;
         }
+        String hashed = Integer.toHexString(password.hashCode());
+        if (!user.getPassword().equals(hashed)) {
+            errorLabel.setText("Mot de passe incorrect");
+            return;
+        }
+        if (user.getStatus() == User.Status.ONLINE) {
+            errorLabel.setText("Cet utilisateur est déjà connecté");
+            return;
+        }
+        user.setStatus(User.Status.ONLINE);
+        Database.getInstance().updateUser(user);
+        this.currentUser = user;
+        openMessagingApplication();
     }
 
     private void openMessagingApplication() {
@@ -48,11 +66,37 @@ public class LoginController {
             FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("messaging-view.fxml"));
             Scene scene = new Scene(fxmlLoader.load(), 900, 700);
             scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
+            MessagingController controller = fxmlLoader.getController();
+            controller.setCurrentUser(currentUser);
             currentStage.setTitle("Messagerie Interne");
             currentStage.setScene(scene);
         } catch (Exception e) {
+            errorLabel.setText("Erreur lors de l'ouverture de la messagerie.");
+        }
+    }
+
+    @FXML
+    protected void onRegisterLinkClick() {
+        try {
+
+            Stage currentStage = (Stage) registerLinkButton.getScene().getWindow();
+
+            FXMLLoader loader = new FXMLLoader(
+                    HelloApplication.class.getResource("register-view.fxml")
+            );
+
+            Scene scene = new Scene(loader.load(), 600, 500);
+
+            scene.getStylesheets().add(
+                    HelloApplication.class.getResource("styles.css").toExternalForm()
+            );
+
+            currentStage.setTitle("Inscription utilisateur");
+            currentStage.setScene(scene);
+
+        } catch (Exception e) {
             e.printStackTrace();
+            errorLabel.setText("Erreur lors de l'ouverture de la page d'inscription.");
         }
     }
 }
-

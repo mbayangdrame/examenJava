@@ -47,6 +47,10 @@
     <!-- Demo Credentials -->
     <Label text="Démo: admin / 123456" style="-fx-font-size: 10; -fx-text-fill: #95a5a6; -fx-font-style: italic;"/>
 
+    <!-- Lien vers inscription -->
+    <Button fx:id="registerLinkButton" text="Créer un compte" onAction="#onRegisterLinkClick"
+            style="-fx-padding: 8; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 5; -fx-background-radius: 5; -fx-cursor: hand;"/>
+
   </VBox>
 
 </VBox>

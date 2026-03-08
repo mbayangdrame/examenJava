@@ -15,26 +15,31 @@ public class Message {
     private User sender;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "recipient_id", nullable = false)
-    private User recipient;
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private User receiver;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String content;
+    @Column(nullable = false, length = 1000)
+    private String contenu;
 
-    @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
-    private LocalDateTime timestamp;
+    @Column(nullable = false)
+    private LocalDateTime dateEnvoi;
 
-    @Column(columnDefinition = "BOOLEAN DEFAULT false")
-    private Boolean isRead;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Statut statut;
+
+    public enum Statut {
+        ENVOYE, RECU, LU
+    }
 
     public Message() {}
 
-    public Message(User sender, User recipient, String content) {
+    public Message(User sender, User receiver, String contenu) {
         this.sender = sender;
-        this.recipient = recipient;
-        this.content = content;
-        this.timestamp = LocalDateTime.now();
-        this.isRead = false;
+        this.receiver = receiver;
+        this.contenu = contenu;
+        this.dateEnvoi = LocalDateTime.now();
+        this.statut = Statut.ENVOYE;
     }
 
     // Getters and Setters
@@ -54,35 +59,35 @@ public class Message {
         this.sender = sender;
     }
 
-    public User getRecipient() {
-        return recipient;
+    public User getReceiver() {
+        return receiver;
     }
 
-    public void setRecipient(User recipient) {
-        this.recipient = recipient;
+    public void setReceiver(User receiver) {
+        this.receiver = receiver;
     }
 
-    public String getContent() {
-        return content;
+    public String getContenu() {
+        return contenu;
     }
 
-    public void setContent(String content) {
-        this.content = content;
+    public void setContenu(String contenu) {
+        this.contenu = contenu;
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public LocalDateTime getDateEnvoi() {
+        return dateEnvoi;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+    public void setDateEnvoi(LocalDateTime dateEnvoi) {
+        this.dateEnvoi = dateEnvoi;
     }
 
-    public Boolean getIsRead() {
-        return isRead;
+    public Statut getStatut() {
+        return statut;
     }
 
-    public void setIsRead(Boolean isRead) {
-        this.isRead = isRead;
+    public void setStatut(Statut statut) {
+        this.statut = statut;
     }
 }
