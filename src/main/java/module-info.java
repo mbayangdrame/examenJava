@@ -1,0 +1,20 @@
+module org.example.examenjava {
+    requires javafx.controls;
+    requires javafx.fxml;
+    requires javafx.graphics;
+
+    requires com.dlsc.formsfx;
+    requires org.kordamp.bootstrapfx.core;
+
+    requires jakarta.persistence;
+    requires org.hibernate.orm.core;
+    requires java.sql;
+
+    opens org.example.examenjava to javafx.fxml;
+    opens org.example.examenjava.Entity to org.hibernate.orm.core;
+
+    exports org.example.examenjava;
+    exports org.example.examenjava.Entity;
+    exports org.example.examenjava.Repository;
+    exports org.example.examenjava.utils;
+}
