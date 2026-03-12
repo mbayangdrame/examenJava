@@ -1,20 +1,38 @@
 package org.example.examenjava.network;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ChatMessage implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     public enum Type {
+        // Auth
         LOGIN, LOGIN_SUCCESS, LOGIN_FAILURE,
         REGISTER, REGISTER_SUCCESS, REGISTER_FAILURE,
         LOGOUT,
+
+        // Messages 1:1
         SEND_MESSAGE, RECEIVE_MESSAGE,
-        USER_LIST_UPDATE,
         REQUEST_HISTORY, HISTORY_RESPONSE,
-        STATUS_UPDATE,
+
+        // Users
+        USER_LIST_UPDATE,
+        READ_RECEIPT,
+
+        // Groupes
+        CREATE_GROUP, CREATE_GROUP_SUCCESS, CREATE_GROUP_FAILURE,
+        ADD_TO_GROUP, REMOVE_FROM_GROUP,
+        GROUP_LIST_UPDATE,
+        SEND_GROUP_MESSAGE, RECEIVE_GROUP_MESSAGE,
+        REQUEST_GROUP_HISTORY, GROUP_HISTORY_RESPONSE,
+        TOGGLE_GROUP_SEND,
+
+        // Approbation
+        PENDING_USERS_REQUEST, PENDING_USERS_RESPONSE,
+        APPROVE_USER, APPROVE_USER_SUCCESS,
+        REJECT_USER, REJECT_USER_SUCCESS,
+
         ERROR
     }
 
@@ -28,26 +46,33 @@ public class ChatMessage implements Serializable {
     private String email;
     private String fullName;
     private String password;
+    private Long groupId;
+    private String groupName;
+    private boolean membersCanSend;
     private List<UserInfo> users;
     private List<MessageInfo> messages;
+    private List<GroupInfo> groups;
 
     public ChatMessage(Type type) {
         this.type = type;
     }
 
-    // Serializable inner classes for transporting user/message data
+    // ---- Inner classes ----
+
     public static class UserInfo implements Serializable {
         private static final long serialVersionUID = 1L;
         public String username;
         public String fullName;
         public String role;
         public String status;
+        public boolean approved;
 
-        public UserInfo(String username, String fullName, String role, String status) {
+        public UserInfo(String username, String fullName, String role, String status, boolean approved) {
             this.username = username;
             this.fullName = fullName;
             this.role = role;
             this.status = status;
+            this.approved = approved;
         }
     }
 
@@ -68,7 +93,25 @@ public class ChatMessage implements Serializable {
         }
     }
 
-    // Getters and Setters
+    public static class GroupInfo implements Serializable {
+        private static final long serialVersionUID = 1L;
+        public Long id;
+        public String name;
+        public String creatorUsername;
+        public boolean membersCanSend;
+        public List<String> memberUsernames;
+
+        public GroupInfo(Long id, String name, String creatorUsername, boolean membersCanSend, List<String> memberUsernames) {
+            this.id = id;
+            this.name = name;
+            this.creatorUsername = creatorUsername;
+            this.membersCanSend = membersCanSend;
+            this.memberUsernames = memberUsernames;
+        }
+    }
+
+    // ---- Getters / Setters ----
+
     public Type getType() { return type; }
     public void setType(Type type) { this.type = type; }
 
@@ -99,9 +142,21 @@ public class ChatMessage implements Serializable {
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
 
+    public Long getGroupId() { return groupId; }
+    public void setGroupId(Long groupId) { this.groupId = groupId; }
+
+    public String getGroupName() { return groupName; }
+    public void setGroupName(String groupName) { this.groupName = groupName; }
+
+    public boolean isMembersCanSend() { return membersCanSend; }
+    public void setMembersCanSend(boolean membersCanSend) { this.membersCanSend = membersCanSend; }
+
     public List<UserInfo> getUsers() { return users; }
     public void setUsers(List<UserInfo> users) { this.users = users; }
 
     public List<MessageInfo> getMessages() { return messages; }
     public void setMessages(List<MessageInfo> messages) { this.messages = messages; }
+
+    public List<GroupInfo> getGroups() { return groups; }
+    public void setGroups(List<GroupInfo> groups) { this.groups = groups; }
 }

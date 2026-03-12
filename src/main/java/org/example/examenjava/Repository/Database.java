@@ -3,9 +3,14 @@ package org.example.examenjava.Repository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.Persistence;
-import org.example.examenjava.Entity.User;
+import org.example.examenjava.Entity.GroupChat;
+import org.example.examenjava.Entity.GroupMessage;
 import org.example.examenjava.Entity.Message;
+import org.example.examenjava.Entity.User;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +28,6 @@ public class Database {
 
     private Database() {
         try {
-            // Variables d'environnement pour surcharger la config (utile pour deploiement VPS)
             Map<String, String> overrides = new HashMap<>();
             String dbUrl = System.getenv("DB_URL");
             String dbUser = System.getenv("DB_USER");
@@ -42,7 +46,44 @@ public class Database {
         return emf.createEntityManager();
     }
 
-    // --- Méthodes User ---
+    // =====================================================================
+    // SEED : organisateur par defaut
+    // =====================================================================
+
+    /**
+     * Cree l'organisateur par defaut saliou/sall s'il n'existe aucun user en base.
+     */
+    public void seedDefaultOrganisateur() {
+        EntityManager em = createEntityManager();
+        try {
+            long count = em.createQuery("SELECT COUNT(u) FROM User u", Long.class).getSingleResult();
+            if (count == 0) {
+                User admin = new User();
+                admin.setUsername("saliou");
+                admin.setPassword(hashPassword("sall"));
+                admin.setEmail("saliou@messagerie.isi");
+                admin.setFullName("Saliou Admin");
+                admin.setRole(User.Role.ORGANISATEUR);
+                admin.setStatus(User.Status.OFFLINE);
+                admin.setApproved(true);
+                admin.setDateCreation(LocalDateTime.now());
+
+                em.getTransaction().begin();
+                em.persist(admin);
+                em.getTransaction().commit();
+                System.out.println("[SEED] Organisateur par defaut cree : saliou / sall");
+            }
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            System.err.println("Erreur seed: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+
+    // =====================================================================
+    // USER METHODS
+    // =====================================================================
 
     public void saveUser(User user) {
         EntityManager em = createEntityManager();
@@ -70,7 +111,27 @@ public class Database {
     public List<User> getAllUsers() {
         EntityManager em = createEntityManager();
         try {
-            return em.createQuery("SELECT u FROM User u", User.class).getResultList();
+            return em.createQuery("SELECT u FROM User u ORDER BY u.role, u.username", User.class).getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    /** Tous les users approuves (pour la liste de contacts) */
+    public List<User> getApprovedUsers() {
+        EntityManager em = createEntityManager();
+        try {
+            return em.createQuery("SELECT u FROM User u WHERE u.approved = true ORDER BY u.role, u.username", User.class).getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    /** Users en attente d'approbation */
+    public List<User> getPendingUsers() {
+        EntityManager em = createEntityManager();
+        try {
+            return em.createQuery("SELECT u FROM User u WHERE u.approved = false ORDER BY u.dateCreation ASC", User.class).getResultList();
         } finally {
             em.close();
         }
@@ -117,13 +178,14 @@ public class Database {
         }
     }
 
-    // --- Méthodes Message ---
+    // =====================================================================
+    // MESSAGE METHODS (1:1)
+    // =====================================================================
 
     public void saveMessage(Message message) {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
-            // Re-attach les entités User au contexte de persistance
             User sender = em.find(User.class, message.getSender().getId());
             User receiver = em.find(User.class, message.getReceiver().getId());
             message.setSender(sender);
@@ -138,24 +200,14 @@ public class Database {
         }
     }
 
-    public Message findMessageById(Long id) {
-        EntityManager em = createEntityManager();
-        try {
-            return em.find(Message.class, id);
-        } finally {
-            em.close();
-        }
-    }
-
     public List<Message> getMessagesBetweenUsers(Long userId1, Long userId2) {
         EntityManager em = createEntityManager();
         try {
             return em.createQuery(
                     "SELECT m FROM Message m WHERE " +
-                            "(m.sender.id = :user1 AND m.receiver.id = :user2) OR " +
-                            "(m.sender.id = :user2 AND m.receiver.id = :user1) " +
-                            "ORDER BY m.dateEnvoi ASC",
-                    Message.class)
+                    "(m.sender.id = :user1 AND m.receiver.id = :user2) OR " +
+                    "(m.sender.id = :user2 AND m.receiver.id = :user1) " +
+                    "ORDER BY m.dateEnvoi ASC", Message.class)
                     .setParameter("user1", userId1)
                     .setParameter("user2", userId2)
                     .getResultList();
@@ -183,9 +235,7 @@ public class Database {
         try {
             em.getTransaction().begin();
             Message managed = em.find(Message.class, message.getId());
-            if (managed != null) {
-                managed.setStatut(Message.Statut.LU);
-            }
+            if (managed != null) managed.setStatut(Message.Statut.LU);
             em.getTransaction().commit();
         } catch (Exception e) {
             if (em.getTransaction().isActive()) em.getTransaction().rollback();
@@ -195,23 +245,164 @@ public class Database {
         }
     }
 
-    public void deleteMessage(Message message) {
+    // =====================================================================
+    // GROUP METHODS
+    // =====================================================================
+
+    public GroupChat saveGroup(GroupChat group) {
         EntityManager em = createEntityManager();
         try {
             em.getTransaction().begin();
-            em.remove(em.merge(message));
+            // Re-attach creator
+            User creator = em.find(User.class, group.getCreator().getId());
+            group.setCreator(creator);
+            // Re-attach members
+            List<User> attached = new java.util.ArrayList<>();
+            for (User m : group.getMembers()) {
+                attached.add(em.find(User.class, m.getId()));
+            }
+            group.setMembers(attached);
+            em.persist(group);
             em.getTransaction().commit();
+            return group;
         } catch (Exception e) {
             if (em.getTransaction().isActive()) em.getTransaction().rollback();
-            System.err.println("Erreur suppression message: " + e.getMessage());
+            System.err.println("Erreur sauvegarde groupe: " + e.getMessage());
+            return null;
         } finally {
             em.close();
         }
     }
 
-    public void close() {
-        if (emf != null && emf.isOpen()) {
-            emf.close();
+    public GroupChat findGroupById(Long id) {
+        EntityManager em = createEntityManager();
+        try {
+            return em.find(GroupChat.class, id);
+        } finally {
+            em.close();
         }
+    }
+
+    public List<GroupChat> getAllGroups() {
+        EntityManager em = createEntityManager();
+        try {
+            return em.createQuery("SELECT g FROM GroupChat g ORDER BY g.name", GroupChat.class).getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    /** Groupes dont l'utilisateur est membre */
+    public List<GroupChat> getGroupsForUser(Long userId) {
+        EntityManager em = createEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT g FROM GroupChat g JOIN g.members m WHERE m.id = :userId ORDER BY g.name",
+                    GroupChat.class)
+                    .setParameter("userId", userId)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    public void addUserToGroup(Long groupId, Long userId) {
+        EntityManager em = createEntityManager();
+        try {
+            em.getTransaction().begin();
+            GroupChat group = em.find(GroupChat.class, groupId);
+            User user = em.find(User.class, userId);
+            if (group != null && user != null && !group.getMembers().contains(user)) {
+                group.getMembers().add(user);
+            }
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            System.err.println("Erreur ajout membre groupe: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+
+    public void removeUserFromGroup(Long groupId, Long userId) {
+        EntityManager em = createEntityManager();
+        try {
+            em.getTransaction().begin();
+            GroupChat group = em.find(GroupChat.class, groupId);
+            if (group != null) {
+                group.getMembers().removeIf(u -> u.getId().equals(userId));
+            }
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            System.err.println("Erreur retrait membre groupe: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+
+    public void updateGroup(GroupChat group) {
+        EntityManager em = createEntityManager();
+        try {
+            em.getTransaction().begin();
+            em.merge(group);
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            System.err.println("Erreur mise a jour groupe: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+
+    public void saveGroupMessage(GroupMessage msg) {
+        EntityManager em = createEntityManager();
+        try {
+            em.getTransaction().begin();
+            User sender = em.find(User.class, msg.getSender().getId());
+            GroupChat group = em.find(GroupChat.class, msg.getGroup().getId());
+            msg.setSender(sender);
+            msg.setGroup(group);
+            em.persist(msg);
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            System.err.println("Erreur sauvegarde message groupe: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+
+    public List<GroupMessage> getGroupMessages(Long groupId) {
+        EntityManager em = createEntityManager();
+        try {
+            return em.createQuery(
+                    "SELECT m FROM GroupMessage m WHERE m.group.id = :groupId ORDER BY m.dateEnvoi ASC",
+                    GroupMessage.class)
+                    .setParameter("groupId", groupId)
+                    .getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    // =====================================================================
+    // UTILITAIRES
+    // =====================================================================
+
+    private String hashPassword(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(password.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (Exception e) {
+            throw new RuntimeException("SHA-256 non disponible", e);
+        }
+    }
+
+    public void close() {
+        if (emf != null && emf.isOpen()) emf.close();
     }
 }

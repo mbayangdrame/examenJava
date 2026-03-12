@@ -1,12 +1,17 @@
 package org.example.examenjava;
 
+import org.example.examenjava.network.ChatClient;
+import org.example.examenjava.network.ChatMessage;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import org.example.examenjava.network.ChatClient;
-import org.example.examenjava.network.ChatMessage;
 
 public class RegisterController {
     @FXML private TextField usernameField;
@@ -69,7 +74,7 @@ public class RegisterController {
             FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("login-view.fxml"));
             Scene scene = new Scene(loader.load(), 500, 600);
             scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
-            stage.setTitle("Messagerie Interne - Connexion");
+            stage.setTitle("Messagerie ISI - Connexion");
             stage.setScene(scene);
         } catch (Exception e) {
             showError("Erreur lors du retour a la connexion.");
@@ -83,6 +88,6 @@ public class RegisterController {
 
     private void showSuccess(String message) {
         errorLabel.setText(message);
-        errorLabel.setStyle("-fx-text-fill: #10b981; -fx-font-size: 12; -fx-font-weight: bold;");
+        errorLabel.setStyle("-fx-text-fill: #00a884; -fx-font-size: 12; -fx-font-weight: bold;");
     }
 }

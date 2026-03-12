@@ -52,6 +52,36 @@
         <version>3.5.1</version>
         <executions>
           <execution>
+            <id>client-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <outputFile>${project.build.directory}/chat-client.jar</outputFile>
+              <transformers>
+                <transformer>
+                  <mainClass>org.example.examenjava.Launcher</mainClass>
+                </transformer>
+                <transformer />
+                <transformer>
+                  <resource>META-INF/persistence.xml</resource>
+                </transformer>
+              </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>module-info.class</exclude>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+          <execution>
             <id>server-jar</id>
             <phase>package</phase>
             <goals>

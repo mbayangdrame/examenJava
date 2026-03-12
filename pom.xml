@@ -102,6 +102,7 @@
           <target>17</target>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-maven-plugin</artifactId>
@@ -142,6 +143,37 @@
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.5.1</version>
         <executions>
+          <!-- Fat JAR CLIENT : mvn package -> target/chat-client.jar -->
+          <!-- Point d'entree : Launcher (contourne la restriction module JavaFX) -->
+          <execution>
+            <id>client-jar</id>
+            <phase>package</phase>
+            <goals><goal>shade</goal></goals>
+            <configuration>
+              <outputFile>${project.build.directory}/chat-client.jar</outputFile>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.example.examenjava.Launcher</mainClass>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/persistence.xml</resource>
+                </transformer>
+              </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>module-info.class</exclude>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+          <!-- Fat JAR SERVEUR -->
           <execution>
             <id>server-jar</id>
             <phase>package</phase>

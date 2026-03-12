@@ -7,6 +7,8 @@
     <persistence-unit name="default" transaction-type="RESOURCE_LOCAL">
         <class>org.example.examenjava.Entity.User</class>
         <class>org.example.examenjava.Entity.Message</class>
+        <class>org.example.examenjava.Entity.GroupChat</class>
+        <class>org.example.examenjava.Entity.GroupMessage</class>
 
         <!-- JDBC Connection Configuration -->
         <properties>
@@ -17,10 +19,9 @@
 
             <!-- Hibernate Dialect -->
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
-            <property name="hibernate.show_sql" value="true" />
+            <property name="hibernate.show_sql" value="false" />
             <property name="hibernate.hbm2ddl.auto" value="update" />
         </properties>
     </persistence-unit>
-
 
 </persistence>

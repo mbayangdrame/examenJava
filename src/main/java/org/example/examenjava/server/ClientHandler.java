@@ -1,5 +1,7 @@
 package org.example.examenjava.server;
 
+import org.example.examenjava.Entity.GroupChat;
+import org.example.examenjava.Entity.GroupMessage;
 import org.example.examenjava.Entity.Message;
 import org.example.examenjava.Entity.User;
 import org.example.examenjava.Repository.Database;
@@ -17,6 +19,7 @@ import java.util.logging.Logger;
 
 public class ClientHandler implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ClientHandler.class.getName());
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     private final Socket socket;
     private ObjectOutputStream out;
@@ -54,6 +57,15 @@ public class ClientHandler implements Runnable {
             case LOGOUT -> handleLogout();
             case SEND_MESSAGE -> handleSendMessage(msg);
             case REQUEST_HISTORY -> handleRequestHistory(msg);
+            case CREATE_GROUP -> handleCreateGroup(msg);
+            case ADD_TO_GROUP -> handleAddToGroup(msg);
+            case REMOVE_FROM_GROUP -> handleRemoveFromGroup(msg);
+            case SEND_GROUP_MESSAGE -> handleSendGroupMessage(msg);
+            case REQUEST_GROUP_HISTORY -> handleRequestGroupHistory(msg);
+            case TOGGLE_GROUP_SEND -> handleToggleGroupSend(msg);
+            case PENDING_USERS_REQUEST -> handlePendingUsersRequest();
+            case APPROVE_USER -> handleApproveUser(msg);
+            case REJECT_USER -> handleRejectUser(msg);
             default -> LOGGER.warning("Type de message non gere: " + msg.getType());
         }
     }
@@ -64,6 +76,10 @@ public class ClientHandler implements Runnable {
         return m;
     }
 
+    // =====================================================================
+    // AUTH
+    // =====================================================================
+
     private void handleLogin(ChatMessage msg) {
         Database db = Database.getInstance();
         User user = db.findUserByUsername(msg.getSender());
@@ -72,13 +88,15 @@ public class ClientHandler implements Runnable {
             sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Utilisateur inconnu"));
             return;
         }
-
+        if (!user.isApproved()) {
+            sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Votre compte est en attente d'approbation par un organisateur"));
+            return;
+        }
         String hashed = hashPassword(msg.getPassword());
         if (!user.getPassword().equals(hashed)) {
             sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Mot de passe incorrect"));
             return;
         }
-
         if (ChatServer.isUserOnline(msg.getSender())) {
             sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Cet utilisateur est deja connecte"));
             return;
@@ -87,7 +105,6 @@ public class ClientHandler implements Runnable {
         this.username = user.getUsername();
         user.setStatus(User.Status.ONLINE);
         db.updateUser(user);
-
         ChatServer.addClient(username, this);
         LOGGER.info("CONNEXION: " + username + " (role: " + user.getRole() + ")");
 
@@ -100,6 +117,7 @@ public class ClientHandler implements Runnable {
 
         deliverUnreadMessages(user);
         ChatServer.broadcastUserList();
+        ChatServer.sendGroupListToUser(username);
     }
 
     private void handleRegister(ChatMessage msg) {
@@ -110,26 +128,47 @@ public class ClientHandler implements Runnable {
             return;
         }
 
+        // Seuls MEMBRE et BENEVOLE peuvent s'inscrire
+        User.Role role;
+        try {
+            role = User.Role.valueOf(msg.getRole());
+            if (role == User.Role.ORGANISATEUR) {
+                sendMessage(makeResponse(ChatMessage.Type.REGISTER_FAILURE, "Impossible de creer un compte organisateur"));
+                return;
+            }
+        } catch (Exception e) {
+            sendMessage(makeResponse(ChatMessage.Type.REGISTER_FAILURE, "Role invalide"));
+            return;
+        }
+
         User newUser = new User();
         newUser.setUsername(msg.getSender());
         newUser.setPassword(hashPassword(msg.getPassword()));
         newUser.setEmail(msg.getEmail());
         newUser.setFullName(msg.getFullName());
-        newUser.setRole(User.Role.valueOf(msg.getRole()));
+        newUser.setRole(role);
         newUser.setStatus(User.Status.OFFLINE);
+        newUser.setApproved(false);
         newUser.setDateCreation(LocalDateTime.now());
         db.saveUser(newUser);
 
-        LOGGER.info("INSCRIPTION: " + msg.getSender() + " (role: " + msg.getRole() + ")");
-        sendMessage(makeResponse(ChatMessage.Type.REGISTER_SUCCESS, "Inscription reussie"));
+        LOGGER.info("INSCRIPTION (en attente): " + msg.getSender() + " (role: " + role + ")");
+        sendMessage(makeResponse(ChatMessage.Type.REGISTER_SUCCESS,
+                "Inscription soumise. En attente d'approbation par un organisateur."));
+
+        // Notifier les organisateurs connectes qu'il y a une nouvelle demande
+        notifyOrganisateursPendingUpdate();
     }
+
+    // =====================================================================
+    // MESSAGES 1:1
+    // =====================================================================
 
     private void handleSendMessage(ChatMessage msg) {
         if (username == null) {
-            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Vous devez etre connecte pour envoyer un message"));
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Vous devez etre connecte"));
             return;
         }
-
         if (msg.getContent() == null || msg.getContent().trim().isEmpty()) {
             sendMessage(makeResponse(ChatMessage.Type.ERROR, "Le message ne peut pas etre vide"));
             return;
@@ -149,25 +188,19 @@ public class ClientHandler implements Runnable {
         }
 
         Message message = new Message(sender, receiver, msg.getContent());
-
         ClientHandler receiverHandler = ChatServer.getClient(msg.getReceiver());
-        if (receiverHandler != null) {
-            message.setStatut(Message.Statut.RECU);
-        } else {
-            message.setStatut(Message.Statut.ENVOYE);
-        }
+        message.setStatut(receiverHandler != null ? Message.Statut.RECU : Message.Statut.ENVOYE);
         db.saveMessage(message);
 
-        LOGGER.info("MESSAGE: " + username + " -> " + msg.getReceiver() + " (" + msg.getContent().length() + " chars)");
-
-        String timestamp = message.getDateEnvoi().format(DateTimeFormatter.ofPattern("HH:mm"));
+        LOGGER.info("MESSAGE 1:1: " + username + " -> " + msg.getReceiver());
+        String ts = message.getDateEnvoi().format(TIME_FMT);
 
         if (receiverHandler != null) {
             ChatMessage delivery = new ChatMessage(ChatMessage.Type.RECEIVE_MESSAGE);
             delivery.setSender(username);
             delivery.setReceiver(msg.getReceiver());
             delivery.setContent(msg.getContent());
-            delivery.setTimestamp(timestamp);
+            delivery.setTimestamp(ts);
             receiverHandler.sendMessage(delivery);
         }
 
@@ -175,19 +208,18 @@ public class ClientHandler implements Runnable {
         confirm.setSender(username);
         confirm.setReceiver(msg.getReceiver());
         confirm.setContent(msg.getContent());
-        confirm.setTimestamp(timestamp);
+        confirm.setTimestamp(ts);
         sendMessage(confirm);
     }
 
     private void handleRequestHistory(ChatMessage msg) {
+        if (username == null) return;
         Database db = Database.getInstance();
         User currentUser = db.findUserByUsername(username);
         User otherUser = db.findUserByUsername(msg.getReceiver());
-
         if (currentUser == null || otherUser == null) return;
 
         List<Message> history = db.getMessagesBetweenUsers(currentUser.getId(), otherUser.getId());
-
         for (Message m : history) {
             if (m.getReceiver().getId().equals(currentUser.getId()) && m.getStatut() != Message.Statut.LU) {
                 db.markMessageAsRead(m);
@@ -196,19 +228,268 @@ public class ClientHandler implements Runnable {
 
         ChatMessage response = new ChatMessage(ChatMessage.Type.HISTORY_RESPONSE);
         response.setReceiver(msg.getReceiver());
-        List<ChatMessage.MessageInfo> messageInfos = new ArrayList<>();
+        List<ChatMessage.MessageInfo> infos = new ArrayList<>();
         for (Message m : history) {
-            messageInfos.add(new ChatMessage.MessageInfo(
+            infos.add(new ChatMessage.MessageInfo(
                     m.getSender().getUsername(),
                     m.getReceiver().getUsername(),
                     m.getContenu(),
-                    m.getDateEnvoi().format(DateTimeFormatter.ofPattern("HH:mm")),
+                    m.getDateEnvoi().format(TIME_FMT),
                     m.getStatut().name()
             ));
         }
-        response.setMessages(messageInfos);
+        response.setMessages(infos);
         sendMessage(response);
     }
+
+    // =====================================================================
+    // GROUPES
+    // =====================================================================
+
+    private void handleCreateGroup(ChatMessage msg) {
+        if (!isOrganisateur()) {
+            sendMessage(makeResponse(ChatMessage.Type.CREATE_GROUP_FAILURE, "Seul un organisateur peut creer un groupe"));
+            return;
+        }
+        if (msg.getGroupName() == null || msg.getGroupName().trim().isEmpty()) {
+            sendMessage(makeResponse(ChatMessage.Type.CREATE_GROUP_FAILURE, "Le nom du groupe ne peut pas etre vide"));
+            return;
+        }
+
+        Database db = Database.getInstance();
+        User creator = db.findUserByUsername(username);
+        GroupChat group = new GroupChat(msg.getGroupName().trim(), creator);
+        group.getMembers().add(creator); // l'organisateur est membre de son propre groupe
+        GroupChat saved = db.saveGroup(group);
+
+        if (saved != null) {
+            LOGGER.info("GROUPE CREE: " + group.getName() + " par " + username);
+            sendMessage(makeResponse(ChatMessage.Type.CREATE_GROUP_SUCCESS, "Groupe cree : " + group.getName()));
+            ChatServer.broadcastGroupList();
+        } else {
+            sendMessage(makeResponse(ChatMessage.Type.CREATE_GROUP_FAILURE, "Erreur lors de la creation du groupe"));
+        }
+    }
+
+    private void handleAddToGroup(ChatMessage msg) {
+        if (!isOrganisateur()) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Seul un organisateur peut ajouter des membres"));
+            return;
+        }
+
+        Database db = Database.getInstance();
+        GroupChat group = db.findGroupById(msg.getGroupId());
+        User target = db.findUserByUsername(msg.getReceiver());
+
+        if (group == null) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Groupe introuvable"));
+            return;
+        }
+        if (target == null) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Utilisateur introuvable"));
+            return;
+        }
+
+        db.addUserToGroup(group.getId(), target.getId());
+        LOGGER.info("AJOUT GROUPE: " + target.getUsername() + " -> " + group.getName());
+
+        ChatMessage ok = makeResponse(ChatMessage.Type.ADD_TO_GROUP, target.getUsername() + " ajoute au groupe " + group.getName());
+        ok.setGroupId(group.getId());
+        sendMessage(ok);
+
+        ChatServer.broadcastGroupList();
+    }
+
+    private void handleRemoveFromGroup(ChatMessage msg) {
+        if (!isOrganisateur()) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Seul un organisateur peut retirer des membres"));
+            return;
+        }
+
+        Database db = Database.getInstance();
+        GroupChat group = db.findGroupById(msg.getGroupId());
+        User target = db.findUserByUsername(msg.getReceiver());
+
+        if (group == null || target == null) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Groupe ou utilisateur introuvable"));
+            return;
+        }
+
+        db.removeUserFromGroup(group.getId(), target.getId());
+        LOGGER.info("RETRAIT GROUPE: " + target.getUsername() + " <- " + group.getName());
+        ChatServer.broadcastGroupList();
+    }
+
+    private void handleSendGroupMessage(ChatMessage msg) {
+        if (username == null) return;
+
+        Database db = Database.getInstance();
+        GroupChat group = db.findGroupById(msg.getGroupId());
+        if (group == null) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Groupe introuvable"));
+            return;
+        }
+
+        // Verifier que le sender est membre du groupe
+        boolean isMember = group.getMembers().stream().anyMatch(u -> u.getUsername().equals(username));
+        if (!isMember) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Vous n'etes pas membre de ce groupe"));
+            return;
+        }
+
+        // Bonus : verifier si les membres non-organisateurs peuvent envoyer
+        if (!group.isMembersCanSend() && !isOrganisateur()) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "L'envoi de messages est desactive pour ce groupe"));
+            return;
+        }
+
+        if (msg.getContent() == null || msg.getContent().trim().isEmpty()) return;
+        if (msg.getContent().length() > 1000) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Message trop long (max 1000 caracteres)"));
+            return;
+        }
+
+        User sender = db.findUserByUsername(username);
+        GroupMessage gm = new GroupMessage(sender, group, msg.getContent());
+        db.saveGroupMessage(gm);
+
+        LOGGER.info("MESSAGE GROUPE: " + username + " -> [" + group.getName() + "]");
+        String ts = gm.getDateEnvoi().format(TIME_FMT);
+
+        // Envoyer a tous les membres connectes
+        for (User member : group.getMembers()) {
+            ClientHandler memberHandler = ChatServer.getClient(member.getUsername());
+            if (memberHandler != null) {
+                ChatMessage delivery = new ChatMessage(ChatMessage.Type.RECEIVE_GROUP_MESSAGE);
+                delivery.setSender(username);
+                delivery.setGroupId(group.getId());
+                delivery.setGroupName(group.getName());
+                delivery.setContent(msg.getContent());
+                delivery.setTimestamp(ts);
+                memberHandler.sendMessage(delivery);
+            }
+        }
+    }
+
+    private void handleRequestGroupHistory(ChatMessage msg) {
+        if (username == null || msg.getGroupId() == null) return;
+
+        Database db = Database.getInstance();
+        GroupChat group = db.findGroupById(msg.getGroupId());
+        if (group == null) return;
+
+        // Verifier que l'utilisateur est membre
+        boolean isMember = group.getMembers().stream().anyMatch(u -> u.getUsername().equals(username))
+                || isOrganisateur();
+        if (!isMember) return;
+
+        List<GroupMessage> history = db.getGroupMessages(group.getId());
+        List<ChatMessage.MessageInfo> infos = new ArrayList<>();
+        for (GroupMessage m : history) {
+            infos.add(new ChatMessage.MessageInfo(
+                    m.getSender().getUsername(),
+                    null,
+                    m.getContenu(),
+                    m.getDateEnvoi().format(TIME_FMT),
+                    "LU"
+            ));
+        }
+
+        ChatMessage response = new ChatMessage(ChatMessage.Type.GROUP_HISTORY_RESPONSE);
+        response.setGroupId(group.getId());
+        response.setGroupName(group.getName());
+        response.setMembersCanSend(group.isMembersCanSend());
+        response.setMessages(infos);
+        sendMessage(response);
+    }
+
+    private void handleToggleGroupSend(ChatMessage msg) {
+        if (!isOrganisateur()) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Seul un organisateur peut modifier ce parametre"));
+            return;
+        }
+
+        Database db = Database.getInstance();
+        GroupChat group = db.findGroupById(msg.getGroupId());
+        if (group == null) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Groupe introuvable"));
+            return;
+        }
+
+        group.setMembersCanSend(msg.isMembersCanSend());
+        db.updateGroup(group);
+
+        LOGGER.info("TOGGLE GROUPE SEND: " + group.getName() + " -> membersCanSend=" + msg.isMembersCanSend());
+        ChatServer.broadcastGroupList();
+    }
+
+    // =====================================================================
+    // APPROBATION
+    // =====================================================================
+
+    private void handlePendingUsersRequest() {
+        if (!isOrganisateur()) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Acces reserve aux organisateurs"));
+            return;
+        }
+
+        Database db = Database.getInstance();
+        List<User> pending = db.getPendingUsers();
+        List<ChatMessage.UserInfo> infos = new ArrayList<>();
+        for (User u : pending) {
+            infos.add(new ChatMessage.UserInfo(
+                    u.getUsername(), u.getFullName(), u.getRole().name(), u.getStatus().name(), false
+            ));
+        }
+
+        ChatMessage response = new ChatMessage(ChatMessage.Type.PENDING_USERS_RESPONSE);
+        response.setUsers(infos);
+        sendMessage(response);
+    }
+
+    private void handleApproveUser(ChatMessage msg) {
+        if (!isOrganisateur()) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Acces reserve aux organisateurs"));
+            return;
+        }
+
+        Database db = Database.getInstance();
+        User target = db.findUserByUsername(msg.getReceiver());
+        if (target == null) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Utilisateur introuvable"));
+            return;
+        }
+
+        target.setApproved(true);
+        db.updateUser(target);
+        LOGGER.info("APPROBATION: " + target.getUsername() + " approuve par " + username);
+
+        sendMessage(makeResponse(ChatMessage.Type.APPROVE_USER_SUCCESS,
+                target.getUsername() + " approuve avec succes"));
+        ChatServer.broadcastUserList();
+    }
+
+    private void handleRejectUser(ChatMessage msg) {
+        if (!isOrganisateur()) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Acces reserve aux organisateurs"));
+            return;
+        }
+
+        Database db = Database.getInstance();
+        User target = db.findUserByUsername(msg.getReceiver());
+        if (target == null) {
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Utilisateur introuvable"));
+            return;
+        }
+
+        db.deleteUser(target);
+        LOGGER.info("REJET: " + target.getUsername() + " rejete par " + username);
+        sendMessage(makeResponse(ChatMessage.Type.REJECT_USER_SUCCESS, target.getUsername() + " rejete"));
+    }
+
+    // =====================================================================
+    // DECONNEXION
+    // =====================================================================
 
     private void handleLogout() {
         if (username != null) {
@@ -249,9 +530,38 @@ public class ClientHandler implements Runnable {
             delivery.setSender(m.getSender().getUsername());
             delivery.setReceiver(m.getReceiver().getUsername());
             delivery.setContent(m.getContenu());
-            delivery.setTimestamp(m.getDateEnvoi().format(DateTimeFormatter.ofPattern("HH:mm")));
+            delivery.setTimestamp(m.getDateEnvoi().format(TIME_FMT));
             sendMessage(delivery);
             db.markMessageAsRead(m);
+        }
+    }
+
+    // =====================================================================
+    // UTILITAIRES
+    // =====================================================================
+
+    private boolean isOrganisateur() {
+        if (username == null) return false;
+        User user = Database.getInstance().findUserByUsername(username);
+        return user != null && user.getRole() == User.Role.ORGANISATEUR;
+    }
+
+    private void notifyOrganisateursPendingUpdate() {
+        Database db = Database.getInstance();
+        List<User> pending = db.getPendingUsers();
+        List<ChatMessage.UserInfo> infos = new ArrayList<>();
+        for (User u : pending) {
+            infos.add(new ChatMessage.UserInfo(u.getUsername(), u.getFullName(), u.getRole().name(), u.getStatus().name(), false));
+        }
+        ChatMessage update = new ChatMessage(ChatMessage.Type.PENDING_USERS_RESPONSE);
+        update.setUsers(infos);
+
+        for (ClientHandler handler : ChatServer.connectedClients.values()) {
+            if (handler.getUsername() == null) continue;
+            User u = db.findUserByUsername(handler.getUsername());
+            if (u != null && u.getRole() == User.Role.ORGANISATEUR) {
+                handler.sendMessage(update);
+            }
         }
     }
 
@@ -276,18 +586,14 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getUsername() { return username; }
 
     private String hashPassword(String password) {
         try {
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
             byte[] hash = md.digest(password.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
-            for (byte b : hash) {
-                sb.append(String.format("%02x", b));
-            }
+            for (byte b : hash) sb.append(String.format("%02x", b));
             return sb.toString();
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 non disponible", e);

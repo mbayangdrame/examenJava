@@ -1,12 +1,12 @@
 /* ===================================================
-   MESSAGERIE INTERNE - STYLES MODERNES
+   MESSAGERIE ISI - WHATSAPP DARK THEME
    =================================================== */
 
 /* --- GLOBAL --- */
 .root {
-    -fx-font-family: "SF Pro Display", "Segoe UI", "Arial", sans-serif;
+    -fx-font-family: "SF Pro Display", "Segoe UI", "Helvetica Neue", sans-serif;
     -fx-font-size: 13px;
-    -fx-background-color: #f1f5f9;
+    -fx-background-color: #111b21;
 }
 
 * {
@@ -14,109 +14,429 @@
     -fx-faint-focus-color: transparent;
 }
 
+/* ===== WHATSAPP LAYOUT ===== */
+
+.wa-root {
+    -fx-background-color: #111b21;
+}
+
+/* --- CONTACT LIST (alias pour wa-contact-list) --- */
+.wa-contact-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+.wa-contact-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+.wa-contact-list .list-cell:hover {
+    -fx-background-color: #202c33;
+}
+.wa-contact-list .list-cell:selected {
+    -fx-background-color: #2a3942;
+}
+.wa-contact-list .list-cell:empty {
+    -fx-background-color: transparent;
+}
+.wa-contact-list .scroll-bar { -fx-background-color: transparent; }
+.wa-contact-list .scroll-bar .thumb { -fx-background-color: #374248; -fx-background-radius: 3; }
+.wa-contact-list .scroll-bar .track { -fx-background-color: transparent; }
+.wa-contact-list .scroll-bar .increment-button,
+.wa-contact-list .scroll-bar .decrement-button { -fx-background-color: transparent; -fx-padding: 0; }
+.wa-contact-list .scroll-bar .increment-arrow,
+.wa-contact-list .scroll-bar .decrement-arrow { -fx-shape: ""; -fx-padding: 0; }
+
+/* --- LEFT ICON NAVBAR --- */
+.wa-navbar {
+    -fx-background-color: #202c33;
+    -fx-border-color: #2a3942;
+    -fx-border-width: 0 1 0 0;
+}
+
+.wa-nav-btn {
+    -fx-background-color: transparent;
+    -fx-padding: 10;
+    -fx-cursor: hand;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-font-size: 22px;
+    -fx-text-fill: #8696a0;
+}
+
+.wa-nav-btn:hover {
+    -fx-background-color: #2a3942;
+    -fx-text-fill: #e9edef;
+}
+
+.wa-nav-active {
+    -fx-background-color: #2a3942;
+}
+
+/* --- SIDEBAR (contacts panel) --- */
+.wa-sidebar {
+    -fx-background-color: #111b21;
+    -fx-border-color: #2a3942;
+    -fx-border-width: 0 1 0 0;
+}
+
+.wa-sidebar-header {
+    -fx-background-color: #202c33;
+    -fx-border-color: #2a3942;
+    -fx-border-width: 0 0 1 0;
+    -fx-min-height: 60;
+}
+
+.wa-user-name {
+    -fx-font-size: 14;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e9edef;
+}
+
+.wa-online-count {
+    -fx-font-size: 11;
+    -fx-text-fill: #00a884;
+}
+
+/* Search */
+.wa-search-box {
+    -fx-background-color: #111b21;
+    -fx-min-height: 44;
+}
+
+.wa-search-input {
+    -fx-background-color: #202c33;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 7 12;
+    -fx-font-size: 13px;
+    -fx-text-fill: #d1d7db;
+    -fx-prompt-text-fill: #8696a0;
+}
+
+.wa-search-input:focused {
+    -fx-background-color: #2a3942;
+    -fx-border-color: transparent;
+}
+
+.wa-separator .line {
+    -fx-border-color: #2a3942;
+    -fx-border-width: 0.5;
+}
+
+/* --- CONTACT LIST --- */
+.wa-contact-list {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.wa-contact-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-border-color: transparent;
+}
+
+.wa-contact-list .list-cell:hover {
+    -fx-background-color: #202c33;
+}
+
+.wa-contact-list .list-cell:selected {
+    -fx-background-color: #2a3942;
+}
+
+.wa-contact-list .list-cell:selected:hover {
+    -fx-background-color: #2a3942;
+}
+
+.wa-contact-list .list-cell:empty {
+    -fx-background-color: transparent;
+}
+
+.wa-contact-list .scroll-bar {
+    -fx-background-color: transparent;
+}
+.wa-contact-list .scroll-bar .thumb {
+    -fx-background-color: #374248;
+    -fx-background-radius: 3;
+}
+.wa-contact-list .scroll-bar .track {
+    -fx-background-color: transparent;
+}
+.wa-contact-list .scroll-bar .increment-button,
+.wa-contact-list .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.wa-contact-list .scroll-bar .increment-arrow,
+.wa-contact-list .scroll-bar .decrement-arrow {
+    -fx-shape: "";
+    -fx-padding: 0;
+}
+
+/* --- CHAT AREA --- */
+.wa-chat-area {
+    -fx-background-color: #0b141a;
+}
+
+/* Welcome screen */
+.wa-welcome {
+    -fx-background-color: #222e35;
+}
+
+.wa-welcome-title {
+    -fx-font-size: 28;
+    -fx-font-weight: 300;
+    -fx-text-fill: #e9edef;
+}
+
+.wa-welcome-subtitle {
+    -fx-font-size: 14;
+    -fx-text-fill: #8696a0;
+}
+
+.wa-welcome-hint {
+    -fx-font-size: 12;
+    -fx-text-fill: #667781;
+    -fx-padding: 8 0 0 0;
+}
+
+/* Chat header */
+.wa-chat-header {
+    -fx-background-color: #202c33;
+    -fx-border-color: #2a3942;
+    -fx-border-width: 0 0 1 0;
+    -fx-min-height: 60;
+}
+
+.wa-chat-contact-name {
+    -fx-font-size: 15;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e9edef;
+}
+
+.wa-chat-contact-status {
+    -fx-font-size: 12;
+    -fx-text-fill: #8696a0;
+}
+
+/* Chat scroll */
+.wa-chat-scroll {
+    -fx-background-color: #0b141a;
+    -fx-background: #0b141a;
+    -fx-border-color: transparent;
+}
+
+.wa-chat-scroll .viewport {
+    -fx-background-color: #0b141a;
+}
+
+.wa-chat-scroll .scroll-bar {
+    -fx-background-color: transparent;
+}
+.wa-chat-scroll .scroll-bar .thumb {
+    -fx-background-color: #374248;
+    -fx-background-radius: 3;
+}
+.wa-chat-scroll .scroll-bar .track {
+    -fx-background-color: transparent;
+}
+.wa-chat-scroll .scroll-bar .increment-button,
+.wa-chat-scroll .scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.wa-chat-scroll .scroll-bar .increment-arrow,
+.wa-chat-scroll .scroll-bar .decrement-arrow {
+    -fx-shape: "";
+    -fx-padding: 0;
+}
+
+/* --- MESSAGE BUBBLES (WhatsApp style) --- */
+.message-bubble-own {
+    -fx-background-color: #005c4b;
+    -fx-text-fill: #e9edef;
+    -fx-padding: 8 12;
+    -fx-background-radius: 8 8 2 8;
+    -fx-font-size: 13.5px;
+}
+
+.message-bubble-other {
+    -fx-background-color: #202c33;
+    -fx-text-fill: #e9edef;
+    -fx-padding: 8 12;
+    -fx-background-radius: 8 8 8 2;
+    -fx-font-size: 13.5px;
+    -fx-border-color: transparent;
+}
+
+/* --- INPUT BAR --- */
+.wa-input-bar {
+    -fx-background-color: #202c33;
+    -fx-border-color: #2a3942;
+    -fx-border-width: 1 0 0 0;
+}
+
+.wa-message-input {
+    -fx-background-color: #2a3942;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 10 16;
+    -fx-font-size: 14px;
+    -fx-text-fill: #d1d7db;
+    -fx-prompt-text-fill: #8696a0;
+}
+
+.wa-message-input:focused {
+    -fx-background-color: #2a3942;
+    -fx-border-color: transparent;
+}
+
+.wa-send-btn {
+    -fx-background-color: #00a884;
+    -fx-padding: 10 14;
+    -fx-background-radius: 20;
+    -fx-border-radius: 20;
+    -fx-cursor: hand;
+}
+
+.wa-send-btn:hover {
+    -fx-background-color: #06cf9c;
+}
+
+.wa-send-btn:pressed {
+    -fx-background-color: #00856b;
+}
+
+/* ===== SETTINGS MENU (overlay) ===== */
+.wa-settings-overlay {
+    -fx-background-color: #111b21;
+    -fx-border-color: #2a3942;
+    -fx-border-width: 0 1 0 0;
+}
+
+/* ===== LOGIN / REGISTER PAGES (WhatsApp green) ===== */
+
 /* --- MODERN INPUT FIELDS --- */
 .modern-field {
-    -fx-background-color: #f8fafc;
-    -fx-border-color: #e2e8f0;
-    -fx-border-radius: 10;
-    -fx-background-radius: 10;
+    -fx-background-color: #2a3942;
+    -fx-border-color: #3b4a54;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
     -fx-padding: 11 14;
     -fx-font-size: 13px;
-    -fx-text-fill: #1e293b;
-    -fx-prompt-text-fill: #94a3b8;
+    -fx-text-fill: #e9edef;
+    -fx-prompt-text-fill: #8696a0;
 }
 
 .modern-field:focused {
-    -fx-border-color: #6366f1;
+    -fx-border-color: #00a884;
     -fx-border-width: 1.5;
-    -fx-background-color: white;
-    -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.15), 8, 0, 0, 0);
+    -fx-background-color: #202c33;
 }
 
 .modern-field:hover {
-    -fx-border-color: #a5b4fc;
+    -fx-border-color: #00a884;
 }
 
 /* --- COMBO BOX --- */
 .modern-combo {
-    -fx-background-color: #f8fafc;
-    -fx-border-color: #e2e8f0;
-    -fx-border-radius: 10;
-    -fx-background-radius: 10;
+    -fx-background-color: #2a3942;
+    -fx-border-color: #3b4a54;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
     -fx-padding: 6 10;
     -fx-font-size: 13px;
 }
 
-.modern-combo:focused {
-    -fx-border-color: #6366f1;
-    -fx-border-width: 1.5;
-}
-
 .modern-combo .list-cell {
+    -fx-text-fill: #e9edef;
+    -fx-background-color: #2a3942;
     -fx-padding: 8 12;
     -fx-font-size: 13px;
 }
 
+.modern-combo:focused {
+    -fx-border-color: #00a884;
+    -fx-border-width: 1.5;
+}
+
+.modern-combo .list-view {
+    -fx-background-color: #2a3942;
+}
+
+.modern-combo .list-view .list-cell {
+    -fx-background-color: #2a3942;
+    -fx-text-fill: #e9edef;
+}
+
+.modern-combo .list-view .list-cell:hover {
+    -fx-background-color: #374248;
+}
+
+.modern-combo .list-view .list-cell:selected {
+    -fx-background-color: #00a884;
+    -fx-text-fill: white;
+}
+
 /* --- BUTTONS --- */
 .btn-primary {
-    -fx-background-color: linear-gradient(to right, #6366f1, #8b5cf6);
+    -fx-background-color: #00a884;
     -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-padding: 12 28;
-    -fx-background-radius: 10;
-    -fx-border-radius: 10;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.3), 8, 0, 0, 3);
 }
 
 .btn-primary:hover {
-    -fx-background-color: linear-gradient(to right, #4f46e5, #7c3aed);
-    -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.45), 12, 0, 0, 4);
+    -fx-background-color: #06cf9c;
 }
 
 .btn-primary:pressed {
-    -fx-background-color: #4338ca;
-    -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.2), 4, 0, 0, 1);
+    -fx-background-color: #00856b;
 }
 
 .btn-secondary {
     -fx-background-color: transparent;
-    -fx-text-fill: #6366f1;
+    -fx-text-fill: #00a884;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
     -fx-padding: 10 20;
-    -fx-border-color: #e2e8f0;
-    -fx-border-radius: 10;
-    -fx-background-radius: 10;
+    -fx-border-color: #3b4a54;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
     -fx-cursor: hand;
 }
 
 .btn-secondary:hover {
-    -fx-background-color: #f1f5f9;
-    -fx-border-color: #6366f1;
+    -fx-background-color: #202c33;
+    -fx-border-color: #00a884;
 }
 
 .btn-success {
-    -fx-background-color: linear-gradient(to right, #10b981, #059669);
+    -fx-background-color: #00a884;
     -fx-text-fill: white;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
     -fx-padding: 12 28;
-    -fx-background-radius: 10;
-    -fx-border-radius: 10;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.3), 8, 0, 0, 3);
 }
 
 .btn-success:hover {
-    -fx-background-color: linear-gradient(to right, #059669, #047857);
-    -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.45), 12, 0, 0, 4);
+    -fx-background-color: #06cf9c;
 }
 
 .btn-ghost {
     -fx-background-color: transparent;
-    -fx-text-fill: #64748b;
+    -fx-text-fill: #8696a0;
     -fx-font-size: 12px;
     -fx-padding: 8 16;
     -fx-background-radius: 8;
@@ -124,206 +444,8 @@
 }
 
 .btn-ghost:hover {
-    -fx-background-color: #f1f5f9;
-    -fx-text-fill: #6366f1;
-}
-
-.btn-outline {
-    -fx-background-color: transparent;
-    -fx-text-fill: #6366f1;
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-padding: 8 16;
-    -fx-border-color: #6366f1;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
-    -fx-cursor: hand;
-}
-
-.btn-outline:hover {
-    -fx-background-color: #eef2ff;
-}
-
-.btn-danger-sm {
-    -fx-background-color: #fef2f2;
-    -fx-text-fill: #ef4444;
-    -fx-font-size: 12px;
-    -fx-font-weight: bold;
-    -fx-padding: 8 16;
-    -fx-border-color: #fecaca;
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
-    -fx-cursor: hand;
-}
-
-.btn-danger-sm:hover {
-    -fx-background-color: #ef4444;
-    -fx-text-fill: white;
-    -fx-border-color: #ef4444;
-}
-
-.btn-send {
-    -fx-background-color: linear-gradient(to right, #6366f1, #8b5cf6);
-    -fx-text-fill: white;
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
-    -fx-padding: 12 24;
-    -fx-background-radius: 12;
-    -fx-border-radius: 12;
-    -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.25), 6, 0, 0, 2);
-}
-
-.btn-send:hover {
-    -fx-background-color: linear-gradient(to right, #4f46e5, #7c3aed);
-    -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.4), 10, 0, 0, 3);
-}
-
-.btn-send:pressed {
-    -fx-background-color: #4338ca;
-}
-
-/* --- SIDEBAR --- */
-.sidebar {
-    -fx-background-color: white;
-    -fx-border-color: #e2e8f0;
-    -fx-border-width: 0 1 0 0;
-}
-
-/* --- CONTACT LIST --- */
-.contact-list {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-padding: 0;
-}
-
-.contact-list .list-cell {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-    -fx-border-color: transparent;
-}
-
-.contact-list .list-cell:hover {
-    -fx-background-color: #f8fafc;
-}
-
-.contact-list .list-cell:selected {
-    -fx-background-color: #eef2ff;
-}
-
-.contact-list .list-cell:selected:hover {
-    -fx-background-color: #e0e7ff;
-}
-
-.contact-list .list-cell:empty {
-    -fx-background-color: transparent;
-}
-
-/* Remove default list-view scrollbar styling */
-.contact-list .scroll-bar {
-    -fx-background-color: transparent;
-}
-
-.contact-list .scroll-bar .thumb {
-    -fx-background-color: #cbd5e1;
-    -fx-background-radius: 3;
-}
-
-.contact-list .scroll-bar .track {
-    -fx-background-color: transparent;
-}
-
-.contact-list .scroll-bar .increment-button,
-.contact-list .scroll-bar .decrement-button {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-}
-
-.contact-list .scroll-bar .increment-arrow,
-.contact-list .scroll-bar .decrement-arrow {
-    -fx-shape: "";
-    -fx-padding: 0;
-}
-
-/* --- CHAT SCROLL PANE --- */
-.chat-scroll {
-    -fx-background-color: transparent;
-    -fx-background: #f8fafc;
-    -fx-border-color: transparent;
-}
-
-.chat-scroll .viewport {
-    -fx-background-color: transparent;
-}
-
-.chat-scroll .scroll-bar {
-    -fx-background-color: transparent;
-}
-
-.chat-scroll .scroll-bar .thumb {
-    -fx-background-color: #cbd5e1;
-    -fx-background-radius: 3;
-}
-
-.chat-scroll .scroll-bar .track {
-    -fx-background-color: transparent;
-}
-
-.chat-scroll .scroll-bar .increment-button,
-.chat-scroll .scroll-bar .decrement-button {
-    -fx-background-color: transparent;
-    -fx-padding: 0;
-}
-
-.chat-scroll .scroll-bar .increment-arrow,
-.chat-scroll .scroll-bar .decrement-arrow {
-    -fx-shape: "";
-    -fx-padding: 0;
-}
-
-/* --- MESSAGE BUBBLES --- */
-.message-bubble-own {
-    -fx-background-color: linear-gradient(to right, #6366f1, #818cf8);
-    -fx-text-fill: white;
-    -fx-padding: 10 16;
-    -fx-background-radius: 16 16 4 16;
-    -fx-font-size: 13px;
-    -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.15), 4, 0, 0, 2);
-}
-
-.message-bubble-other {
-    -fx-background-color: white;
-    -fx-text-fill: #1e293b;
-    -fx-padding: 10 16;
-    -fx-background-radius: 16 16 16 4;
-    -fx-font-size: 13px;
-    -fx-border-color: #e2e8f0;
-    -fx-border-radius: 16 16 16 4;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.05), 3, 0, 0, 1);
-}
-
-/* --- MESSAGE INPUT --- */
-.message-input {
-    -fx-background-color: #f1f5f9;
-    -fx-border-color: #e2e8f0;
-    -fx-border-radius: 12;
-    -fx-background-radius: 12;
-    -fx-padding: 12 18;
-    -fx-font-size: 13px;
-    -fx-text-fill: #1e293b;
-    -fx-prompt-text-fill: #94a3b8;
-}
-
-.message-input:focused {
-    -fx-border-color: #6366f1;
-    -fx-background-color: white;
-    -fx-effect: dropshadow(gaussian, rgba(99, 102, 241, 0.1), 6, 0, 0, 0);
-}
-
-/* --- SEPARATOR --- */
-.separator .line {
-    -fx-border-color: #f1f5f9;
-    -fx-border-width: 0.5;
+    -fx-background-color: #202c33;
+    -fx-text-fill: #00a884;
 }
 
 /* --- SCROLLBAR GLOBAL --- */
@@ -332,12 +454,12 @@
 }
 
 .scroll-bar .thumb {
-    -fx-background-color: #cbd5e1;
+    -fx-background-color: #374248;
     -fx-background-radius: 3;
 }
 
 .scroll-bar:hover .thumb {
-    -fx-background-color: #94a3b8;
+    -fx-background-color: #4a5a64;
 }
 
 .scroll-bar .track {
@@ -358,14 +480,20 @@
 
 /* --- LABELS --- */
 .label {
-    -fx-text-fill: #334155;
+    -fx-text-fill: #e9edef;
 }
 
 /* --- TOOLTIPS --- */
 .tooltip {
-    -fx-background-color: #1e293b;
-    -fx-text-fill: white;
+    -fx-background-color: #202c33;
+    -fx-text-fill: #e9edef;
     -fx-background-radius: 6;
     -fx-padding: 6 10;
     -fx-font-size: 11px;
+}
+
+/* --- SEPARATOR --- */
+.separator .line {
+    -fx-border-color: #2a3942;
+    -fx-border-width: 0.5;
 }

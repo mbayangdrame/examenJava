@@ -10,9 +10,11 @@ module org.example.examenjava {
     requires org.hibernate.orm.core;
     requires java.sql;
     requires java.logging;
+    requires java.desktop;
+    requires java.prefs;
 
     opens org.example.examenjava to javafx.fxml;
-    opens org.example.examenjava.Entity to org.hibernate.orm.core;
+    opens org.example.examenjava.Entity to org.hibernate.orm.core, javafx.base;
     opens org.example.examenjava.network to javafx.fxml;
 
     exports org.example.examenjava;

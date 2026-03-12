@@ -1,6 +1,7 @@
 package org.example.examenjava.Entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -21,12 +22,6 @@ public class User {
     @Column(nullable = false)
     private String fullName;
 
-    @Column(columnDefinition = "BOOLEAN DEFAULT true")
-    private Boolean isOnline;
-
-    @Transient
-    private boolean selected;
-
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -35,97 +30,45 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    @Column(nullable = false, updatable = false)
-    private java.time.LocalDateTime dateCreation;
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean approved = false;
 
-    // Enum pour le rôle
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime dateCreation;
+
     public enum Role {
         ORGANISATEUR, MEMBRE, BENEVOLE
     }
 
-    // Enum pour le statut
     public enum Status {
         ONLINE, OFFLINE
     }
 
     // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public String getPassword() {
-        return password;
-    }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 
-    public String getEmail() {
-        return email;
-    }
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public boolean isApproved() { return approved; }
+    public void setApproved(boolean approved) { this.approved = approved; }
 
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public Boolean getIsOnline() {
-        return isOnline;
-    }
-
-    public void setIsOnline(Boolean isOnline) {
-        this.isOnline = isOnline;
-    }
-
-    public boolean isSelected() {
-        return selected;
-    }
-
-    public void setSelected(boolean selected) {
-        this.selected = selected;
-    }
-
-    public Role getRole() {
-        return role;
-    }
-
-    public void setRole(Role role) {
-        this.role = role;
-    }
-
-    public Status getStatus() {
-        return status;
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
-    }
-
-    public java.time.LocalDateTime getDateCreation() {
-        return dateCreation;
-    }
-
-    public void setDateCreation(java.time.LocalDateTime dateCreation) {
-        this.dateCreation = dateCreation;
-    }
+    public LocalDateTime getDateCreation() { return dateCreation; }
+    public void setDateCreation(LocalDateTime dateCreation) { this.dateCreation = dateCreation; }
 }

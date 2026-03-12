@@ -1,12 +1,16 @@
 package org.example.examenjava;
 
+import org.example.examenjava.network.ChatClient;
+import org.example.examenjava.network.ChatMessage;
+
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import org.example.examenjava.network.ChatClient;
-import org.example.examenjava.network.ChatMessage;
 
 public class LoginController {
     @FXML private TextField usernameField;
@@ -56,7 +60,7 @@ public class LoginController {
             MessagingController controller = fxmlLoader.getController();
             controller.initWithClient(client, loginResponse);
 
-            currentStage.setTitle("Messagerie Interne - " + loginResponse.getSender());
+            currentStage.setTitle("Messagerie ISI - " + loginResponse.getSender());
             currentStage.setScene(scene);
             currentStage.setMinWidth(900);
             currentStage.setMinHeight(600);
@@ -73,7 +77,7 @@ public class LoginController {
             FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("register-view.fxml"));
             Scene scene = new Scene(loader.load(), 550, 650);
             scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
-            currentStage.setTitle("Inscription - Messagerie Interne");
+            currentStage.setTitle("Inscription - Messagerie ISI");
             currentStage.setScene(scene);
         } catch (Exception e) {
             e.printStackTrace();
