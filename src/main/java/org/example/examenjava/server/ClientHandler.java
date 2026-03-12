@@ -1,12 +1,5 @@
 package org.example.examenjava.server;
 
-import org.example.examenjava.Entity.GroupChat;
-import org.example.examenjava.Entity.GroupMessage;
-import org.example.examenjava.Entity.Message;
-import org.example.examenjava.Entity.User;
-import org.example.examenjava.Repository.Database;
-import org.example.examenjava.network.ChatMessage;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -16,6 +9,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
+import org.example.examenjava.Entity.GroupChat;
+import org.example.examenjava.Entity.GroupMessage;
+import org.example.examenjava.Entity.Message;
+import org.example.examenjava.Entity.User;
+import org.example.examenjava.Repository.Database;
+import org.example.examenjava.network.ChatMessage;
 
 public class ClientHandler implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ClientHandler.class.getName());
@@ -509,15 +509,20 @@ public class ClientHandler implements Runnable {
 
     private void handleLogout() {
         if (username != null) {
-            Database db = Database.getInstance();
-            User user = db.findUserByUsername(username);
-            if (user != null) {
-                user.setStatus(User.Status.OFFLINE);
-                db.updateUser(user);
+            try {
+                Database db = Database.getInstance();
+                User user = db.findUserByUsername(username);
+                if (user != null) {
+                    user.setStatus(User.Status.OFFLINE);
+                    db.updateUser(user);
+                }
+                LOGGER.info("DECONNEXION: " + username);
+            } catch (Exception e) {
+                LOGGER.warning("Erreur lors de la déconnexion de " + username + ": " + e.getMessage());
+            } finally {
+                ChatServer.removeClient(username);
+                ChatServer.broadcastUserList();
             }
-            LOGGER.info("DECONNEXION: " + username);
-            ChatServer.removeClient(username);
-            ChatServer.broadcastUserList();
         }
         running = false;
         closeConnection();
@@ -525,15 +530,20 @@ public class ClientHandler implements Runnable {
 
     private void handleDisconnect() {
         if (username != null) {
-            Database db = Database.getInstance();
-            User user = db.findUserByUsername(username);
-            if (user != null) {
-                user.setStatus(User.Status.OFFLINE);
-                db.updateUser(user);
+            try {
+                Database db = Database.getInstance();
+                User user = db.findUserByUsername(username);
+                if (user != null) {
+                    user.setStatus(User.Status.OFFLINE);
+                    db.updateUser(user);
+                }
+                LOGGER.info("PERTE DE CONNEXION: " + username);
+            } catch (Exception e) {
+                LOGGER.warning("Erreur lors du nettoyage de " + username + ": " + e.getMessage());
+            } finally {
+                ChatServer.removeClient(username);
+                ChatServer.broadcastUserList();
             }
-            LOGGER.info("PERTE DE CONNEXION: " + username);
-            ChatServer.removeClient(username);
-            ChatServer.broadcastUserList();
         }
         closeConnection();
     }

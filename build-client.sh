@@ -37,6 +37,12 @@ echo "→ Étape 3 : Génération de l'installeur avec jpackage..."
 rm -rf target/installer
 mkdir -p target/installer
 
+# Options Windows spécifiques
+WIN_OPTS=""
+if [[ "$(uname -s)" == MINGW* ]] || [[ "$(uname -s)" == CYGWIN* ]] || [[ "$(uname -s)" == MSYS* ]]; then
+  WIN_OPTS="--type exe --win-per-user-install --win-dir-chooser --win-shortcut --win-menu --win-menu-group Messagerie-ISI"
+fi
+
 jpackage \
   --name "Messagerie-ISI" \
   --app-version "1.0" \
@@ -48,7 +54,8 @@ jpackage \
   --dest target/installer \
   --java-options "--add-opens java.base/java.lang=ALL-UNNAMED" \
   --java-options "--add-opens java.base/java.util=ALL-UNNAMED" \
-  --java-options "--add-opens java.base/java.lang.reflect=ALL-UNNAMED"
+  --java-options "--add-opens java.base/java.lang.reflect=ALL-UNNAMED" \
+  $WIN_OPTS
 
 echo ""
 echo "======================================================"
