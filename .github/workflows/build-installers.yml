@@ -1,0 +1,82 @@
+name: Build Native Installers
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            artifact: Messagerie-ISI-macos
+          - os: windows-latest
+            artifact: Messagerie-ISI-windows
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build fat JAR
+        run: ./mvnw clean package -DskipTests -q
+        shell: bash
+
+      - name: Prepare jpackage input
+        run: |
+          mkdir -p target/jpackage-input
+          cp target/chat-client.jar target/jpackage-input/
+        shell: bash
+
+      - name: Build installer
+        run: |
+          mkdir -p target/installer
+          jpackage \
+            --name "Messagerie-ISI" \
+            --app-version "1.0" \
+            --vendor "ISI" \
+            --description "Application de messagerie instantanee pour associations ISI" \
+            --input target/jpackage-input \
+            --main-jar chat-client.jar \
+            --main-class org.example.examenjava.Launcher \
+            --dest target/installer \
+            --java-options "--add-opens java.base/java.lang=ALL-UNNAMED" \
+            --java-options "--add-opens java.base/java.util=ALL-UNNAMED" \
+            --java-options "--add-opens java.base/java.lang.reflect=ALL-UNNAMED"
+        shell: bash
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: target/installer/Messagerie-ISI*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: installers
+
+      - name: List installers
+        run: find installers -type f | head -20
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: installers/**/*
+          generate_release_notes: true
