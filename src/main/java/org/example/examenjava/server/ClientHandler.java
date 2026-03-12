@@ -209,6 +209,7 @@ public class ClientHandler implements Runnable {
         confirm.setReceiver(msg.getReceiver());
         confirm.setContent(msg.getContent());
         confirm.setTimestamp(ts);
+        confirm.setStatus(message.getStatut().name());
         sendMessage(confirm);
     }
 
@@ -220,9 +221,24 @@ public class ClientHandler implements Runnable {
         if (currentUser == null || otherUser == null) return;
 
         List<Message> history = db.getMessagesBetweenUsers(currentUser.getId(), otherUser.getId());
+
+        java.util.Set<String> sendersToNotify = new java.util.HashSet<>();
         for (Message m : history) {
             if (m.getReceiver().getId().equals(currentUser.getId()) && m.getStatut() != Message.Statut.LU) {
+                sendersToNotify.add(m.getSender().getUsername());
+                m.setStatut(Message.Statut.LU);
                 db.markMessageAsRead(m);
+            }
+        }
+
+        // Notify senders that their messages were read
+        for (String senderName : sendersToNotify) {
+            ClientHandler senderHandler = ChatServer.getClient(senderName);
+            if (senderHandler != null) {
+                ChatMessage receipt = new ChatMessage(ChatMessage.Type.READ_RECEIPT);
+                receipt.setSender(username);   // who read
+                receipt.setReceiver(senderName);
+                senderHandler.sendMessage(receipt);
             }
         }
 

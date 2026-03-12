@@ -56,12 +56,15 @@ public class Database {
     public void seedDefaultOrganisateur() {
         EntityManager em = createEntityManager();
         try {
-            long count = em.createQuery("SELECT COUNT(u) FROM User u", Long.class).getSingleResult();
-            if (count == 0) {
+            // Creer saliou seulement s'il n'existe pas encore
+            long exists = em.createQuery(
+                    "SELECT COUNT(u) FROM User u WHERE u.username = 'saliou'", Long.class)
+                    .getSingleResult();
+            if (exists == 0) {
                 User admin = new User();
                 admin.setUsername("saliou");
                 admin.setPassword(hashPassword("sall"));
-                admin.setEmail("saliou@messagerie.isi");
+                admin.setEmail("saliou@elan.asso");
                 admin.setFullName("Saliou Admin");
                 admin.setRole(User.Role.ORGANISATEUR);
                 admin.setStatus(User.Status.OFFLINE);

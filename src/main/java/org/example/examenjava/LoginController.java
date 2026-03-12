@@ -60,7 +60,7 @@ public class LoginController {
             MessagingController controller = fxmlLoader.getController();
             controller.initWithClient(client, loginResponse);
 
-            currentStage.setTitle("Messagerie ISI - " + loginResponse.getSender());
+            currentStage.setTitle("Élan - " + loginResponse.getSender());
             currentStage.setScene(scene);
             currentStage.setMinWidth(900);
             currentStage.setMinHeight(600);
@@ -77,7 +77,7 @@ public class LoginController {
             FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("register-view.fxml"));
             Scene scene = new Scene(loader.load(), 550, 650);
             scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
-            currentStage.setTitle("Inscription - Messagerie ISI");
+            currentStage.setTitle("Élan - Inscription");
             currentStage.setScene(scene);
         } catch (Exception e) {
             e.printStackTrace();

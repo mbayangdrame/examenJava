@@ -1,5 +1,16 @@
 package org.example.examenjava;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.prefs.Preferences;
+
+import org.example.examenjava.network.ChatClient;
+import org.example.examenjava.network.ChatMessage;
+
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
@@ -7,17 +18,23 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ChoiceDialog;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.example.examenjava.network.ChatClient;
-import org.example.examenjava.network.ChatMessage;
-
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.prefs.Preferences;
 
 public class MessagingController {
 
@@ -86,13 +103,14 @@ public class MessagingController {
 
     private final Map<String, List<CachedMsg>> messageCache = new HashMap<>();
     private final Map<String, Integer> unreadCounts = new HashMap<>();
+    private final Map<String, List<Label>> sentCheckmarks = new HashMap<>();
 
     private boolean isDarkTheme = true;
-    private static final Preferences PREFS = Preferences.userRoot().node("messagerie-isi");
+    private static final Preferences PREFS = Preferences.userRoot().node("elan-app");
 
     private static class CachedMsg {
-        String sender, content, timestamp; boolean isOwn;
-        CachedMsg(String s, String c, String t, boolean o) { sender=s; content=c; timestamp=t; isOwn=o; }
+        String sender, content, timestamp, statut; boolean isOwn;
+        CachedMsg(String s, String c, String t, boolean o, String st) { sender=s; content=c; timestamp=t; isOwn=o; statut=st; }
     }
 
     @FXML
@@ -149,9 +167,9 @@ public class MessagingController {
         this.currentRole = loginResponse.getRole();
 
         String color = getAvatarColor(currentUsername);
-        currentUserAvatar.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 22;");
+        currentUserAvatar.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 22; -fx-min-width: 44; -fx-min-height: 44; -fx-max-width: 44; -fx-max-height: 44;");
         currentUserInitial.setText(currentUsername.substring(0, 1).toUpperCase());
-        settingsAvatar.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 26;");
+        settingsAvatar.setStyle("-fx-background-color: " + color + "; -fx-background-radius: 26; -fx-min-width: 52; -fx-min-height: 52; -fx-max-width: 52; -fx-max-height: 52;");
         settingsInitial.setText(currentUsername.substring(0, 1).toUpperCase());
         settingsNameLabel.setText(currentFullName);
         settingsRoleLabel.setText(getRoleBadgeText(currentRole));
@@ -189,10 +207,13 @@ public class MessagingController {
         panel.setVisible(true); panel.setManaged(true);
     }
     private void setNavActive(Button active) {
-        String on  = "-fx-background-color: #2a3942; -fx-text-fill: #00a884; -fx-font-size: 22; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 10;";
-        String off = "-fx-background-color: transparent; -fx-text-fill: #8696a0; -fx-font-size: 22; -fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 10;";
         for (Button b : new Button[]{navChatBtn, navGroupBtn, navPendingBtn, navSettingsBtn}) {
-            if (b != null) b.setStyle(b == active ? on : off);
+            if (b != null) {
+                b.getStyleClass().remove("wa-nav-active");
+                if (b == active) {
+                    b.getStyleClass().add("wa-nav-active");
+                }
+            }
         }
     }
 
@@ -218,7 +239,13 @@ public class MessagingController {
         String key = username;
         if (messageCache.containsKey(key)) {
             messagesContainer.getChildren().clear();
-            for (CachedMsg m : messageCache.get(key)) addMessageBubble(m.sender, m.content, m.timestamp, m.isOwn, false);
+            sentCheckmarks.remove(key);
+            List<Label> marks = new ArrayList<>();
+            for (CachedMsg m : messageCache.get(key)) {
+                Label ck = addMessageBubble(m.sender, m.content, m.timestamp, m.isOwn, false, m.statut);
+                if (ck != null) marks.add(ck);
+            }
+            if (!marks.isEmpty()) sentCheckmarks.put(key, marks);
         } else {
             messagesContainer.getChildren().clear();
             chatClient.requestHistory(username);
@@ -252,7 +279,7 @@ public class MessagingController {
         String key = "group:" + group.id;
         if (messageCache.containsKey(key)) {
             messagesContainer.getChildren().clear();
-            for (CachedMsg m : messageCache.get(key)) addMessageBubble(m.sender, m.content, m.timestamp, m.isOwn, true);
+            for (CachedMsg m : messageCache.get(key)) addMessageBubble(m.sender, m.content, m.timestamp, m.isOwn, true, m.statut);
         } else {
             messagesContainer.getChildren().clear();
             chatClient.requestGroupHistory(group.id);
@@ -271,16 +298,29 @@ public class MessagingController {
 
     // --- Callbacks reseau ---
     private void onMessageReceived(ChatMessage msg) {
+        if (msg.getType() == ChatMessage.Type.READ_RECEIPT) {
+            // msg.getSender() = the contact who just read our messages
+            String contactKey = msg.getSender();
+            List<Label> marks = sentCheckmarks.get(contactKey);
+            if (marks != null) {
+                for (Label l : marks) {
+                    l.setText("\u2713\u2713");
+                    l.setStyle("-fx-font-size: 10; -fx-text-fill: #53bdeb;");
+                }
+            }
+            return;
+        }
         boolean isOwn = msg.getSender().equals(currentUsername);
         if (isOwn) {
             if (selectedContactUsername != null && msg.getReceiver().equals(selectedContactUsername)) {
-                addAndCache(selectedContactUsername, msg.getSender(), msg.getContent(), msg.getTimestamp(), true, false);
+                String statut = msg.getStatus() != null ? msg.getStatus() : "ENVOYE";
+                addAndCache(selectedContactUsername, msg.getSender(), msg.getContent(), msg.getTimestamp(), true, false, statut);
             }
             return;
         }
         String sender = msg.getSender();
         if (selectedContactUsername != null && sender.equals(selectedContactUsername)) {
-            addAndCache(sender, sender, msg.getContent(), msg.getTimestamp(), false, false);
+            addAndCache(sender, sender, msg.getContent(), msg.getTimestamp(), false, false, null);
         } else {
             unreadCounts.merge(sender, 1, Integer::sum); userListView.refresh();
         }
@@ -306,12 +346,16 @@ public class MessagingController {
         if (msg.getMessages() == null) return;
         String key = msg.getReceiver();
         messagesContainer.getChildren().clear();
+        sentCheckmarks.remove(key);
         List<CachedMsg> cache = new ArrayList<>();
+        List<Label> marks = new ArrayList<>();
         for (ChatMessage.MessageInfo m : msg.getMessages()) {
             boolean isOwn = m.senderUsername.equals(currentUsername);
-            addMessageBubble(m.senderUsername, m.content, m.timestamp, isOwn, false);
-            cache.add(new CachedMsg(m.senderUsername, m.content, m.timestamp, isOwn));
+            Label ck = addMessageBubble(m.senderUsername, m.content, m.timestamp, isOwn, false, m.statut);
+            if (ck != null) marks.add(ck);
+            cache.add(new CachedMsg(m.senderUsername, m.content, m.timestamp, isOwn, m.statut));
         }
+        if (!marks.isEmpty()) sentCheckmarks.put(key, marks);
         messageCache.put(key, cache);
     }
 
@@ -333,7 +377,7 @@ public class MessagingController {
         String key = "group:" + msg.getGroupId();
         boolean isOwn = msg.getSender().equals(currentUsername);
         if (selectedGroup != null && selectedGroup.id.equals(msg.getGroupId())) {
-            addAndCache(key, msg.getSender(), msg.getContent(), msg.getTimestamp(), isOwn, true);
+            addAndCache(key, msg.getSender(), msg.getContent(), msg.getTimestamp(), isOwn, true, null);
         } else if (!isOwn) {
             unreadCounts.merge(key, 1, Integer::sum); groupListView.refresh();
             playNotificationSound(); flashTitle("Nouveau message dans " + msg.getGroupName());
@@ -347,8 +391,8 @@ public class MessagingController {
         List<CachedMsg> cache = new ArrayList<>();
         for (ChatMessage.MessageInfo m : msg.getMessages()) {
             boolean isOwn = m.senderUsername.equals(currentUsername);
-            addMessageBubble(m.senderUsername, m.content, m.timestamp, isOwn, true);
-            cache.add(new CachedMsg(m.senderUsername, m.content, m.timestamp, isOwn));
+            addMessageBubble(m.senderUsername, m.content, m.timestamp, isOwn, true, null);
+            cache.add(new CachedMsg(m.senderUsername, m.content, m.timestamp, isOwn, null));
         }
         messageCache.put(key, cache);
     }
@@ -370,11 +414,15 @@ public class MessagingController {
 
     private void onServerError(String error) {
         Alert a = new Alert(Alert.AlertType.WARNING);
+        a.getDialogPane().getStyleClass().add("wa-dialog");
+        a.getDialogPane().getStylesheets().add(getClass().getResource("/org/example/examenjava/styles.css").toExternalForm());
         a.setTitle("Erreur"); a.setHeaderText(null); a.setContentText(error); a.showAndWait();
     }
 
     private void onDisconnected() {
         Alert a = new Alert(Alert.AlertType.ERROR);
+        a.getDialogPane().getStyleClass().add("wa-dialog");
+        a.getDialogPane().getStylesheets().add(getClass().getResource("/org/example/examenjava/styles.css").toExternalForm());
         a.setTitle("Deconnexion"); a.setHeaderText("Connexion perdue");
         a.setContentText("La connexion avec le serveur a ete perdue."); a.showAndWait();
         navigateToLogin();
@@ -393,8 +441,11 @@ public class MessagingController {
 
     @FXML protected void onCreateGroup() {
         TextInputDialog dlg = new TextInputDialog();
-        dlg.setTitle("Creer un groupe"); dlg.setHeaderText("Nouveau groupe");
-        dlg.setContentText("Nom :"); dlg.getDialogPane().setStyle("-fx-background-color: #202c33;");
+        dlg.setTitle("Creer un groupe"); 
+        dlg.setHeaderText("Nouveau groupe");
+        dlg.setContentText("Nom :"); 
+        dlg.getDialogPane().getStyleClass().add("wa-dialog");
+        dlg.getDialogPane().getStylesheets().add(getClass().getResource("/org/example/examenjava/styles.css").toExternalForm());
         dlg.showAndWait().ifPresent(n -> { if (!n.trim().isEmpty()) chatClient.createGroup(n.trim()); });
     }
 
@@ -407,8 +458,11 @@ public class MessagingController {
         }
         if (nonMembers.isEmpty()) { showInfo("Tous les utilisateurs sont deja membres."); return; }
         ChoiceDialog<String> dlg = new ChoiceDialog<>(nonMembers.get(0), nonMembers);
-        dlg.setTitle("Ajouter un membre"); dlg.setHeaderText("Groupe : " + selectedGroup.name);
-        dlg.setContentText("Utilisateur :"); dlg.getDialogPane().setStyle("-fx-background-color: #202c33;");
+        dlg.setTitle("Ajouter un membre"); 
+        dlg.setHeaderText("Groupe : " + selectedGroup.name);
+        dlg.setContentText("Utilisateur :"); 
+        dlg.getDialogPane().getStyleClass().add("wa-dialog");
+        dlg.getDialogPane().getStylesheets().add(getClass().getResource("/org/example/examenjava/styles.css").toExternalForm());
         dlg.showAndWait().ifPresent(c -> chatClient.addToGroup(selectedGroup.id, c.split(" \\(")[0]));
     }
 
@@ -454,7 +508,8 @@ public class MessagingController {
     }
 
     // --- Affichage messages ---
-    private void addMessageBubble(String sender, String content, String timestamp, boolean isOwn, boolean isGroup) {
+    /** Returns the checkmark Label for own 1:1 messages (to allow later updates), null otherwise. */
+    private Label addMessageBubble(String sender, String content, String timestamp, boolean isOwn, boolean isGroup, String statut) {
         VBox container = new VBox(2);
         if (isGroup && !isOwn) {
             Label sl = new Label(sender);
@@ -468,7 +523,18 @@ public class MessagingController {
         String ts = timestamp != null ? timestamp : LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
         Label tl = new Label(ts);
         tl.setStyle("-fx-font-size: 9; -fx-text-fill: #667781;");
-        container.getChildren().addAll(bubble, tl);
+
+        Label checkmark = null;
+        if (isOwn && !isGroup) {
+            checkmark = buildCheckmarkLabel(statut);
+        }
+
+        HBox metaRow = new HBox(4);
+        metaRow.setAlignment(isOwn ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        metaRow.getChildren().add(tl);
+        if (checkmark != null) metaRow.getChildren().add(checkmark);
+
+        container.getChildren().addAll(bubble, metaRow);
 
         Region spacer = new Region();
         HBox hbox;
@@ -482,12 +548,26 @@ public class MessagingController {
         hbox.setPadding(new Insets(2, 12, 2, 12));
         messagesContainer.getChildren().add(hbox);
         Platform.runLater(() -> chatScrollPane.setVvalue(1.0));
+        return checkmark;
     }
 
-    private void addAndCache(String key, String sender, String content, String timestamp, boolean isOwn, boolean isGroup) {
-        addMessageBubble(sender, content, timestamp, isOwn, isGroup);
+    private Label buildCheckmarkLabel(String statut) {
+        Label l = new Label();
+        switch (statut != null ? statut : "ENVOYE") {
+            case "LU"   -> { l.setText("\u2713\u2713"); l.setStyle("-fx-font-size: 10; -fx-text-fill: #53bdeb;"); }
+            case "RECU" -> { l.setText("\u2713\u2713"); l.setStyle("-fx-font-size: 10; -fx-text-fill: #8696a0;"); }
+            default     -> { l.setText("\u2713");       l.setStyle("-fx-font-size: 10; -fx-text-fill: #8696a0;"); }
+        }
+        return l;
+    }
+
+    private void addAndCache(String key, String sender, String content, String timestamp, boolean isOwn, boolean isGroup, String statut) {
+        Label ck = addMessageBubble(sender, content, timestamp, isOwn, isGroup, statut);
+        if (ck != null && !isGroup) {
+            sentCheckmarks.computeIfAbsent(key, k -> new ArrayList<>()).add(ck);
+        }
         messageCache.computeIfAbsent(key, k -> new ArrayList<>())
-                .add(new CachedMsg(sender, content, timestamp, isOwn));
+                .add(new CachedMsg(sender, content, timestamp, isOwn, statut));
     }
 
     // --- Cellules ---
@@ -551,33 +631,53 @@ public class MessagingController {
         return sp;
     }
     private VBox buildUserInfo(String username, ChatMessage.UserInfo info) {
-        VBox box = new VBox(3);
-        Label name = new Label(username);
+        VBox box = new VBox(2);
+        
+        HBox nameRow = new HBox(4); 
+        nameRow.setAlignment(Pos.CENTER_LEFT);
+        String displayName = (info != null && info.fullName != null && !info.fullName.isEmpty()) ? info.fullName : username;
+        Label name = new Label(displayName);
         name.setStyle("-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #e9edef;");
-        HBox row = new HBox(6); row.setAlignment(Pos.CENTER_LEFT);
+        nameRow.getChildren().add(name);
+        
         if (info != null) {
-            row.getChildren().add(buildRoleBadge(info.role));
-            Region dot = new Region(); dot.setMinSize(8,8); dot.setMaxSize(8,8);
-            dot.setStyle("-fx-background-color: " + ("ONLINE".equals(info.status) ? "#00a884" : "#667781") + "; -fx-background-radius: 4;");
-            row.getChildren().add(dot);
+            javafx.scene.shape.SVGPath roleIcon = new javafx.scene.shape.SVGPath();
+            roleIcon.setContent("M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z");
+            String iconColor;
+            switch (info.role) {
+                case "ORGANISATEUR": iconColor = "#eab308"; break;
+                case "MEMBRE":       iconColor = "#3b82f6"; break;
+                default:             iconColor = "#22c55e"; break;
+            }
+            roleIcon.setFill(javafx.scene.paint.Color.web(iconColor));
+            roleIcon.setScaleX(0.55); 
+            roleIcon.setScaleY(0.55);
+            StackPane iconContainer = new StackPane(roleIcon);
+            iconContainer.setMinSize(16, 16); 
+            iconContainer.setMaxSize(16, 16);
+            nameRow.getChildren().add(iconContainer);
         }
-        box.getChildren().addAll(name, row);
+        
+        HBox statusRow = new HBox(6); 
+        statusRow.setAlignment(Pos.CENTER_LEFT);
+        if (info != null) {
+            Region dot = new Region(); 
+            dot.setMinSize(8,8); 
+            dot.setMaxSize(8,8);
+            boolean isOnline = "ONLINE".equals(info.status);
+            dot.setStyle("-fx-background-color: " + (isOnline ? "#00a884" : "#667781") + "; -fx-background-radius: 4;");
+            Label statusText = new Label(isOnline ? "En ligne" : "Hors ligne");
+            statusText.setStyle("-fx-font-size: 11; -fx-text-fill: #8696a0;");
+            statusRow.getChildren().addAll(dot, statusText);
+        }
+        
+        box.getChildren().addAll(nameRow, statusRow);
         return box;
     }
     private Label buildBadge(int count) {
         Label b = new Label(count > 99 ? "99+" : String.valueOf(count));
         b.setMinSize(22,22); b.setMaxSize(22,22); b.setAlignment(Pos.CENTER);
         b.setStyle("-fx-background-color: #00a884; -fx-background-radius: 11; -fx-text-fill: white; -fx-font-size: 10; -fx-font-weight: bold;");
-        return b;
-    }
-    private Label buildRoleBadge(String role) {
-        Label b = new Label();
-        switch (role) {
-            case "ORGANISATEUR" -> b.setStyle("-fx-background-color: #7c3aed; -fx-text-fill: white; -fx-font-size: 9; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 2 6;");
-            case "MEMBRE"       -> b.setStyle("-fx-background-color: #1d4ed8; -fx-text-fill: white; -fx-font-size: 9; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 2 6;");
-            default             -> b.setStyle("-fx-background-color: #065f46; -fx-text-fill: white; -fx-font-size: 9; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 2 6;");
-        }
-        b.setText(buildRoleBadgeText(role));
         return b;
     }
     private String buildRoleBadgeText(String role) {
@@ -622,7 +722,7 @@ public class MessagingController {
             Scene scene = new Scene(loader.load(), 500, 600);
             scene.getStylesheets().add(HelloApplication.class.getResource(
                     PREFS.getBoolean("darkTheme", true) ? "styles.css" : "styles-light.css").toExternalForm());
-            stage.setTitle("Messagerie ISI - Connexion"); stage.setScene(scene);
+            stage.setTitle("Élan - Connexion"); stage.setScene(scene);
         } catch (Exception e) { e.printStackTrace(); }
     }
 
@@ -638,6 +738,9 @@ public class MessagingController {
         return switch (role) { case "ORGANISATEUR" -> "\u2605 Organisateur"; case "MEMBRE" -> "\u25C6 Membre"; default -> "\u25CF Benevole"; };
     }
     private void showInfo(String msg) {
-        Alert a = new Alert(Alert.AlertType.INFORMATION); a.setTitle("Info"); a.setHeaderText(null); a.setContentText(msg); a.showAndWait();
+        Alert a = new Alert(Alert.AlertType.INFORMATION); 
+        a.getDialogPane().getStyleClass().add("wa-dialog");
+        a.getDialogPane().getStylesheets().add(getClass().getResource("/org/example/examenjava/styles.css").toExternalForm());
+        a.setTitle("Info"); a.setHeaderText(null); a.setContentText(msg); a.showAndWait();
     }
 }

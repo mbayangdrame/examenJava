@@ -13,7 +13,7 @@ public class HelloApplication extends Application {
         FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("login-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 500, 600);
         scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
-        stage.setTitle("Messagerie Interne - Connexion");
+        stage.setTitle("Élan - Connexion");
         stage.setScene(scene);
         stage.setMinWidth(450);
         stage.setMinHeight(550);

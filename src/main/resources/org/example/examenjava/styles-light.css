@@ -1,5 +1,5 @@
 /* ===================================================
-   MESSAGERIE ISI - LIGHT THEME
+   ÉLAN - LIGHT THEME
    =================================================== */
 
 .root {
@@ -226,3 +226,55 @@
 
 /* Labels */
 .label { -fx-text-fill: #111b21; }
+
+/* Fixes for Light Mode added via Script */
+.wa-sidebar {
+    -fx-background-color: #ffffff;
+}
+
+.wa-sidebar-header {
+    -fx-background-color: #f0f2f5;
+    -fx-border-color: #f0f2f5;
+    -fx-border-width: 0 1 0 0;
+}
+
+.wa-chat-area {
+    -fx-background-color: #efeae2;
+}
+
+.wa-settings-card {
+    -fx-background-color: #ffffff;
+}
+
+.wa-input-bar {
+    -fx-background-color: #f0f2f5;
+    -fx-border-color: #d1d7db;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 10 16;
+}
+
+.wa-text-secondary {
+    -fx-text-fill: #54656f;
+}
+
+.wa-text-secondary {
+    -fx-text-fill: #54656f;
+}
+
+.wa-btn-secondary {
+    -fx-background-color: #f0f2f5;
+    -fx-text-fill: #111b21;
+    -fx-font-size: 11;
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+    -fx-cursor: hand;
+}
+
+.wa-btn-secondary {
+    -fx-background-color: #e9edef;
+    -fx-text-fill: #111b21;
+    -fx-font-size: 11;
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+    -fx-cursor: hand;
+}

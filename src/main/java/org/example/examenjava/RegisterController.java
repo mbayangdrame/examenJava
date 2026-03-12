@@ -74,7 +74,7 @@ public class RegisterController {
             FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("login-view.fxml"));
             Scene scene = new Scene(loader.load(), 500, 600);
             scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
-            stage.setTitle("Messagerie ISI - Connexion");
+            stage.setTitle("Élan - Connexion");
             stage.setScene(scene);
         } catch (Exception e) {
             showError("Erreur lors du retour a la connexion.");

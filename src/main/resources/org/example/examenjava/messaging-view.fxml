@@ -13,11 +13,10 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.shape.SVGPath?>
 
 <HBox spacing="0" xmlns:fx="http://javafx.com/fxml"
-      fx:controller="org.example.examenjava.MessagingController"
-      style="-fx-background-color: #111b21;">
-
+        fx:controller="org.example.examenjava.MessagingController">
   <!-- ===== NAVBAR GAUCHE ===== -->
   <VBox fx:id="navbar" styleClass="wa-navbar" minWidth="64" maxWidth="64" spacing="4">
     <padding><Insets top="10" bottom="10"/></padding>
@@ -27,30 +26,51 @@
       <Label fx:id="currentUserInitial" text="?" style="-fx-text-fill: white; -fx-font-size: 18; -fx-font-weight: bold;"/>
     </StackPane>
 
-    <Region VBox.vgrow="ALWAYS"/>
+    <Region minHeight="16"/>
 
-    <Button fx:id="navChatBtn" text="&#x1F4AC;" onAction="#onNavChat" styleClass="wa-nav-btn" maxWidth="Infinity"/>
-    <Button fx:id="navGroupBtn" text="&#x1F465;" onAction="#onNavGroups" styleClass="wa-nav-btn" maxWidth="Infinity"/>
+    <Button fx:id="navChatBtn" onAction="#onNavChat" styleClass="wa-nav-btn" maxWidth="Infinity">
+      <graphic>
+        <SVGPath content="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+      </graphic>
+    </Button>
+    <Button fx:id="navGroupBtn" onAction="#onNavGroups" styleClass="wa-nav-btn" maxWidth="Infinity">
+      <graphic>
+        <SVGPath content="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+      </graphic>
+    </Button>
 
     <StackPane alignment="TOP_RIGHT">
-      <Button fx:id="navPendingBtn" text="&#x1F514;" onAction="#onNavPending" styleClass="wa-nav-btn" maxWidth="Infinity" visible="false" managed="false"/>
+      <Button fx:id="navPendingBtn" onAction="#onNavPending" styleClass="wa-nav-btn" maxWidth="Infinity" visible="false" managed="false">
+        <graphic>
+          <SVGPath content="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+        </graphic>
+      </Button>
       <Label fx:id="pendingBadge" text="" visible="false" managed="false"
              style="-fx-background-color: #ef4444; -fx-background-radius: 9; -fx-text-fill: white; -fx-font-size: 9; -fx-font-weight: bold; -fx-min-width: 18; -fx-min-height: 18; -fx-alignment: CENTER;"/>
     </StackPane>
 
     <Region VBox.vgrow="ALWAYS"/>
 
-    <Button fx:id="navSettingsBtn" text="&#x2699;" onAction="#onNavSettings" styleClass="wa-nav-btn" maxWidth="Infinity"/>
+    <Button fx:id="navSettingsBtn" onAction="#onNavSettings" styleClass="wa-nav-btn" maxWidth="Infinity">
+      <graphic>
+        <SVGPath content="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+      </graphic>
+    </Button>
+    
+    <Button onAction="#onLogoutButtonClick" styleClass="wa-nav-btn" maxWidth="Infinity">
+      <graphic>
+        <SVGPath content="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+      </graphic>
+    </Button>
   </VBox>
 
   <!-- ===== SIDEBAR ===== -->
-  <StackPane fx:id="sidebarStack" minWidth="320" maxWidth="320"
-             style="-fx-background-color: #111b21; -fx-border-color: #2a3942; -fx-border-width: 0 1 0 0;">
+  <StackPane fx:id="sidebarStack" minWidth="320" maxWidth="320" styleClass="wa-sidebar">
 
     <!-- PANNEAU CONTACTS -->
     <VBox fx:id="panelContacts">
       <HBox alignment="CENTER_LEFT" style="-fx-padding: 16 20 10 20;">
-        <Label text="Discussions" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #e9edef;"/>
+        <Label text="Discussions" style="-fx-font-size: 16; -fx-font-weight: bold; "/>
         <Region HBox.hgrow="ALWAYS"/>
         <Label fx:id="onlineCountLabel" text="0 en ligne" style="-fx-font-size: 11; -fx-text-fill: #00a884;"/>
       </HBox>
@@ -64,7 +84,7 @@
     <!-- PANNEAU GROUPES -->
     <VBox fx:id="panelGroups" visible="false" managed="false">
       <HBox alignment="CENTER_LEFT" style="-fx-padding: 16 20 10 20;">
-        <Label text="Groupes" style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: #e9edef;"/>
+        <Label text="Groupes" style="-fx-font-size: 16; -fx-font-weight: bold; "/>
         <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="createGroupBtn" text="+ Nouveau" onAction="#onCreateGroup"
                 visible="false" managed="false"
@@ -76,10 +96,11 @@
     <!-- PANNEAU APPROBATIONS -->
     <VBox fx:id="panelPending" visible="false" managed="false">
       <HBox alignment="CENTER_LEFT" style="-fx-padding: 16 20 10 20;">
-        <Label text="Demandes d'inscription" style="-fx-font-size: 15; -fx-font-weight: bold; -fx-text-fill: #e9edef;"/>
+        <Label text="Demandes d'inscription" style="-fx-font-size: 15; -fx-font-weight: bold; "/>
       </HBox>
       <Label fx:id="pendingEmptyLabel" text="Aucune demande en attente"
-             style="-fx-text-fill: #8696a0; -fx-font-size: 12; -fx-padding: 0 20;"
+               styleClass="wa-text-secondary"
+               style="-fx-font-size: 12; -fx-padding: 0 20;"
              visible="false" managed="false"/>
       <ListView fx:id="pendingListView" styleClass="wa-contact-list" VBox.vgrow="ALWAYS"/>
     </VBox>
@@ -87,24 +108,24 @@
     <!-- PANNEAU SETTINGS -->
     <VBox fx:id="panelSettings" visible="false" managed="false" spacing="0">
       <padding><Insets top="20" left="20" right="20" bottom="20"/></padding>
-      <Label text="Parametres" style="-fx-font-size: 17; -fx-font-weight: bold; -fx-text-fill: #e9edef;"/>
+      <Label text="Parametres" style="-fx-font-size: 17; -fx-font-weight: bold; "/>
       <Region style="-fx-min-height: 24;"/>
       <HBox spacing="14" alignment="CENTER_LEFT"
-            style="-fx-background-color: #202c33; -fx-background-radius: 12; -fx-padding: 14;">
+              styleClass="wa-settings-card" style="-fx-background-radius: 12; -fx-padding: 14;">
         <StackPane>
           <Region fx:id="settingsAvatar" style="-fx-background-radius: 26; -fx-min-width: 52; -fx-min-height: 52; -fx-max-width: 52; -fx-max-height: 52;"/>
           <Label fx:id="settingsInitial" text="?" style="-fx-text-fill: white; -fx-font-size: 20; -fx-font-weight: bold;"/>
         </StackPane>
         <VBox spacing="4">
-          <Label fx:id="settingsNameLabel" text="Utilisateur" style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #e9edef;"/>
-          <Label fx:id="settingsRoleLabel" text="Role" style="-fx-font-size: 11; -fx-text-fill: #8696a0;"/>
+          <Label fx:id="settingsNameLabel" text="Utilisateur" style="-fx-font-size: 14; -fx-font-weight: bold; "/>
+            <Label fx:id="settingsRoleLabel" text="Role" styleClass="wa-text-secondary" style="-fx-font-size: 11; "/>
         </VBox>
       </HBox>
       <Region style="-fx-min-height: 16;"/>
-      <VBox spacing="10" style="-fx-background-color: #202c33; -fx-background-radius: 12; -fx-padding: 14;">
-        <Label text="Apparence" style="-fx-font-size: 12; -fx-text-fill: #8696a0; -fx-font-weight: bold;"/>
+        <VBox spacing="10" styleClass="wa-settings-card" style="-fx-background-radius: 12; -fx-padding: 14;">
+          <Label text="Apparence" styleClass="wa-text-secondary" style="-fx-font-size: 12; -fx-font-weight: bold;"/>
         <HBox alignment="CENTER_LEFT" spacing="12">
-          <Label fx:id="themeLabel" text="Theme sombre" style="-fx-text-fill: #e9edef; -fx-font-size: 13;"/>
+          <Label fx:id="themeLabel" text="Theme sombre" style=" -fx-font-size: 13;"/>
           <Region HBox.hgrow="ALWAYS"/>
           <ToggleButton fx:id="themeToggle" text="ON" onAction="#onToggleTheme"
                         style="-fx-background-color: #00a884; -fx-text-fill: white; -fx-font-size: 11; -fx-background-radius: 12; -fx-padding: 4 14; -fx-cursor: hand;"/>
@@ -118,20 +139,21 @@
   </StackPane>
 
   <!-- ===== ZONE CHAT ===== -->
-  <VBox HBox.hgrow="ALWAYS" style="-fx-background-color: #0b141a;">
+  <VBox HBox.hgrow="ALWAYS" styleClass="wa-chat-area">
 
     <VBox fx:id="welcomePane" alignment="CENTER" VBox.vgrow="ALWAYS" spacing="14">
       <Label text="&#x1F4AC;" style="-fx-font-size: 64;"/>
-      <Label text="Messagerie ISI" style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #e9edef;"/>
+      <Label text="Élan" style="-fx-font-size: 22; -fx-font-weight: bold; "/>
       <Label text="Selectionnez une conversation pour commencer"
-             style="-fx-font-size: 13; -fx-text-fill: #8696a0;"/>
+               styleClass="wa-text-secondary"
+               style="-fx-font-size: 13; "/>
     </VBox>
 
     <VBox fx:id="chatPane" visible="false" managed="false" VBox.vgrow="ALWAYS">
 
       <!-- Header -->
       <HBox spacing="12" alignment="CENTER_LEFT"
-            style="-fx-background-color: #202c33; -fx-padding: 12 20; -fx-border-color: #2a3942; -fx-border-width: 0 0 1 0;">
+            styleClass="wa-sidebar-header" style="-fx-padding: 12 20;">
         <StackPane>
           <Region fx:id="selectedUserAvatar"
                   style="-fx-background-radius: 22; -fx-min-width: 44; -fx-min-height: 44; -fx-max-width: 44; -fx-max-height: 44; -fx-background-color: #6366f1;"/>
@@ -139,14 +161,14 @@
         </StackPane>
         <VBox spacing="2">
           <Label fx:id="selectedUserLabel" text="Contact"
-                 style="-fx-font-size: 15; -fx-font-weight: bold; -fx-text-fill: #e9edef;"/>
+                 style="-fx-font-size: 15; -fx-font-weight: bold; "/>
           <Label fx:id="userStatusLabel" text=""
                  style="-fx-font-size: 11; -fx-text-fill: #00a884;"/>
         </VBox>
         <Region HBox.hgrow="ALWAYS"/>
         <Button fx:id="toggleSendBtn" text="Desactiver envoi" onAction="#onToggleGroupSend"
                 visible="false" managed="false"
-                style="-fx-background-color: #2a3942; -fx-text-fill: #e9edef; -fx-font-size: 11; -fx-background-radius: 8; -fx-padding: 6 12; -fx-cursor: hand;"/>
+                  styleClass="wa-btn-secondary"/>
         <Button fx:id="addMemberBtn" text="+ Membre" onAction="#onAddMemberToGroup"
                 visible="false" managed="false"
                 style="-fx-background-color: #00a884; -fx-text-fill: white; -fx-font-size: 11; -fx-background-radius: 8; -fx-padding: 6 12; -fx-cursor: hand;"/>
@@ -162,19 +184,20 @@
 
       <!-- Saisie -->
       <HBox fx:id="inputBar" spacing="10" alignment="CENTER"
-            style="-fx-background-color: #202c33; -fx-padding: 10 16;">
-        <TextField fx:id="messageField" promptText="Ecrire un message..."
-                   styleClass="wa-message-input" HBox.hgrow="ALWAYS"/>
-        <Button fx:id="sendButton" text="&#x27A4;" onAction="#onSendButtonClick"
-                styleClass="wa-send-btn"/>
-      </HBox>
+              styleClass="wa-input-bar">
+          <TextField fx:id="messageField" promptText="Ecrire un message..."
+                     styleClass="wa-message-input" HBox.hgrow="ALWAYS"/>
+          <Button fx:id="sendButton" text="&#x27A4;" onAction="#onSendButtonClick"
+                  styleClass="wa-send-btn"/>
+        </HBox>
 
-      <!-- Bandeau mode annonce -->
-      <HBox fx:id="sendDisabledBar" alignment="CENTER"
-            visible="false" managed="false"
-            style="-fx-background-color: #202c33; -fx-padding: 14;">
+        <!-- Bandeau mode annonce -->
+        <HBox fx:id="sendDisabledBar" alignment="CENTER"
+              visible="false" managed="false"
+              styleClass="wa-input-bar">
         <Label text="Seuls les organisateurs peuvent envoyer dans ce groupe"
-               style="-fx-text-fill: #8696a0; -fx-font-size: 12;"/>
+                 styleClass="wa-text-secondary"
+                 style="-fx-font-size: 12;"/>
       </HBox>
 
     </VBox>

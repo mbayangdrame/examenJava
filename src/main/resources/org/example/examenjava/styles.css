@@ -1,5 +1,5 @@
 /* ===================================================
-   MESSAGERIE ISI - WHATSAPP DARK THEME
+   ÉLAN - WHATSAPP DARK THEME
    =================================================== */
 
 /* --- GLOBAL --- */
@@ -61,17 +61,70 @@
     -fx-cursor: hand;
     -fx-background-radius: 8;
     -fx-border-radius: 8;
-    -fx-font-size: 22px;
-    -fx-text-fill: #8696a0;
+    -fx-content-display: graphic-only;
+}
+
+.wa-nav-btn SVGPath {
+    -fx-fill: #8696a0;
 }
 
 .wa-nav-btn:hover {
     -fx-background-color: #2a3942;
-    -fx-text-fill: #e9edef;
+}
+
+.wa-nav-btn:hover SVGPath {
+    -fx-fill: #e9edef;
 }
 
 .wa-nav-active {
     -fx-background-color: #2a3942;
+}
+
+.wa-nav-active SVGPath {
+    -fx-fill: #00a884;
+}
+
+/* Modals / Dialogs overrides */
+.wa-dialog {
+    -fx-background-color: #111b21;
+}
+.wa-dialog > *.button-bar > *.container {
+    -fx-background-color: #111b21;
+}
+.wa-dialog > *.label.content {
+    -fx-text-fill: #e9edef;
+    -fx-font-size: 13px;
+}
+.wa-dialog:header *.header-panel {
+    -fx-background-color: #202c33;
+}
+.wa-dialog:header *.header-panel *.label {
+    -fx-text-fill: #e9edef;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+.wa-dialog *.text-field {
+    -fx-background-color: #2a3942;
+    -fx-text-fill: #e9edef;
+    -fx-border-color: transparent transparent #00a884 transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-prompt-text-fill: #8696a0;
+}
+.wa-dialog *.combo-box {
+    -fx-background-color: #2a3942;
+}
+.wa-dialog *.combo-box *.list-cell {
+    -fx-text-fill: #e9edef;
+}
+.wa-dialog .button {
+    -fx-background-color: #00a884;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-background-radius: 6;
+}
+.wa-dialog .button:hover {
+    -fx-background-color: #00bfa5;
 }
 
 /* --- SIDEBAR (contacts panel) --- */
@@ -277,6 +330,7 @@
     -fx-background-color: #202c33;
     -fx-border-color: #2a3942;
     -fx-border-width: 1 0 0 0;
+    -fx-padding: 10 16;
 }
 
 .wa-message-input {
@@ -496,4 +550,17 @@
 .separator .line {
     -fx-border-color: #2a3942;
     -fx-border-width: 0.5;
+}
+
+.wa-text-secondary {
+    -fx-text-fill: #8696a0;
+}
+
+.wa-btn-secondary {
+    -fx-background-color: #2a3942;
+    -fx-text-fill: #e9edef;
+    -fx-font-size: 11;
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+    -fx-cursor: hand;
 }

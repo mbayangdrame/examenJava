@@ -25,13 +25,13 @@
     <!-- Logo / Icon -->
     <StackPane>
       <Region style="-fx-background-color: #00a884; -fx-background-radius: 30; -fx-min-width: 60; -fx-min-height: 60; -fx-max-width: 60; -fx-max-height: 60;"/>
-      <Label text="M" style="-fx-text-fill: white; -fx-font-size: 26; -fx-font-weight: bold;"/>
+      <Label text="É" style="-fx-text-fill: white; -fx-font-size: 26; -fx-font-weight: bold;"/>
     </StackPane>
 
     <Region style="-fx-min-height: 16;"/>
 
     <!-- Title -->
-    <Label text="Messagerie ISI" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #e9edef;"/>
+    <Label text="Élan" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #e9edef;"/>
     <Region style="-fx-min-height: 4;"/>
     <Label text="Connectez-vous pour acceder a vos messages" style="-fx-font-size: 12; -fx-text-fill: #8696a0;"/>
 
@@ -78,6 +78,6 @@
   </VBox>
 
   <Region style="-fx-min-height: 20;"/>
-  <Label text="Messagerie ISI v1.0" style="-fx-text-fill: rgba(255,255,255,0.6); -fx-font-size: 11;"/>
+  <Label text="Élan v1.0" style="-fx-text-fill: rgba(255,255,255,0.6); -fx-font-size: 11;"/>
 
 </VBox>

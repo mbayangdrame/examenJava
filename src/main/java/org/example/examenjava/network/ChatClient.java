@@ -102,7 +102,7 @@ public class ChatClient {
 
     private void handleServerMessage(ChatMessage msg) {
         switch (msg.getType()) {
-            case RECEIVE_MESSAGE -> { if (onMessageReceived != null) onMessageReceived.accept(msg); }
+            case RECEIVE_MESSAGE, READ_RECEIPT -> { if (onMessageReceived != null) onMessageReceived.accept(msg); }
             case USER_LIST_UPDATE -> { if (onUserListUpdated != null) onUserListUpdated.accept(msg); }
             case HISTORY_RESPONSE -> { if (onHistoryReceived != null) onHistoryReceived.accept(msg); }
             case GROUP_LIST_UPDATE -> { if (onGroupListUpdated != null) onGroupListUpdated.accept(msg); }
