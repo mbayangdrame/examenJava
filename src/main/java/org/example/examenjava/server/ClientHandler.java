@@ -15,9 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-/**
- * RG11 : Chaque client est géré dans un thread séparé côté serveur.
- */
 public class ClientHandler implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ClientHandler.class.getName());
 
@@ -61,41 +58,37 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private static ChatMessage makeResponse(ChatMessage.Type type, String content) {
+        ChatMessage m = new ChatMessage(type);
+        m.setContent(content);
+        return m;
+    }
+
     private void handleLogin(ChatMessage msg) {
         Database db = Database.getInstance();
         User user = db.findUserByUsername(msg.getSender());
 
         if (user == null) {
-            sendMessage(new ChatMessage(ChatMessage.Type.LOGIN_FAILURE) {{
-                setContent("Utilisateur inconnu");
-            }});
+            sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Utilisateur inconnu"));
             return;
         }
 
         String hashed = hashPassword(msg.getPassword());
         if (!user.getPassword().equals(hashed)) {
-            sendMessage(new ChatMessage(ChatMessage.Type.LOGIN_FAILURE) {{
-                setContent("Mot de passe incorrect");
-            }});
+            sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Mot de passe incorrect"));
             return;
         }
 
-        // RG3 : Un utilisateur ne peut être connecté qu'une seule fois
         if (ChatServer.isUserOnline(msg.getSender())) {
-            sendMessage(new ChatMessage(ChatMessage.Type.LOGIN_FAILURE) {{
-                setContent("Cet utilisateur est deja connecte");
-            }});
+            sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Cet utilisateur est deja connecte"));
             return;
         }
 
-        // RG4 : À la connexion le statut devient ONLINE
         this.username = user.getUsername();
         user.setStatus(User.Status.ONLINE);
         db.updateUser(user);
 
         ChatServer.addClient(username, this);
-
-        // RG12 : Le serveur doit journaliser les connexions
         LOGGER.info("CONNEXION: " + username + " (role: " + user.getRole() + ")");
 
         ChatMessage response = new ChatMessage(ChatMessage.Type.LOGIN_SUCCESS);
@@ -105,21 +98,15 @@ public class ClientHandler implements Runnable {
         response.setEmail(user.getEmail());
         sendMessage(response);
 
-        // Envoyer les messages non lus (RG6)
         deliverUnreadMessages(user);
-
-        // Diffuser la liste des utilisateurs mise à jour à tous les clients
         ChatServer.broadcastUserList();
     }
 
     private void handleRegister(ChatMessage msg) {
         Database db = Database.getInstance();
 
-        // RG1 : Le username doit être unique
         if (db.findUserByUsername(msg.getSender()) != null) {
-            sendMessage(new ChatMessage(ChatMessage.Type.REGISTER_FAILURE) {{
-                setContent("Nom d'utilisateur deja utilise");
-            }});
+            sendMessage(makeResponse(ChatMessage.Type.REGISTER_FAILURE, "Nom d'utilisateur deja utilise"));
             return;
         }
 
@@ -134,32 +121,21 @@ public class ClientHandler implements Runnable {
         db.saveUser(newUser);
 
         LOGGER.info("INSCRIPTION: " + msg.getSender() + " (role: " + msg.getRole() + ")");
-
-        sendMessage(new ChatMessage(ChatMessage.Type.REGISTER_SUCCESS) {{
-            setContent("Inscription reussie");
-        }});
+        sendMessage(makeResponse(ChatMessage.Type.REGISTER_SUCCESS, "Inscription reussie"));
     }
 
     private void handleSendMessage(ChatMessage msg) {
-        // RG5 : L'expéditeur doit être connecté
         if (username == null) {
-            sendMessage(new ChatMessage(ChatMessage.Type.ERROR) {{
-                setContent("Vous devez etre connecte pour envoyer un message");
-            }});
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Vous devez etre connecte pour envoyer un message"));
             return;
         }
 
-        // RG7 : Le contenu ne doit pas être vide et ne doit pas dépasser 1000 caractères
         if (msg.getContent() == null || msg.getContent().trim().isEmpty()) {
-            sendMessage(new ChatMessage(ChatMessage.Type.ERROR) {{
-                setContent("Le message ne peut pas etre vide");
-            }});
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Le message ne peut pas etre vide"));
             return;
         }
         if (msg.getContent().length() > 1000) {
-            sendMessage(new ChatMessage(ChatMessage.Type.ERROR) {{
-                setContent("Le message ne doit pas depasser 1000 caracteres");
-            }});
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Le message ne doit pas depasser 1000 caracteres"));
             return;
         }
 
@@ -167,18 +143,13 @@ public class ClientHandler implements Runnable {
         User sender = db.findUserByUsername(username);
         User receiver = db.findUserByUsername(msg.getReceiver());
 
-        // RG5 : Le destinataire doit exister
         if (receiver == null) {
-            sendMessage(new ChatMessage(ChatMessage.Type.ERROR) {{
-                setContent("Le destinataire n'existe pas");
-            }});
+            sendMessage(makeResponse(ChatMessage.Type.ERROR, "Le destinataire n'existe pas"));
             return;
         }
 
-        // Créer et sauvegarder le message
         Message message = new Message(sender, receiver, msg.getContent());
 
-        // RG6 : Si le destinataire est hors ligne, le message est enregistré
         ClientHandler receiverHandler = ChatServer.getClient(msg.getReceiver());
         if (receiverHandler != null) {
             message.setStatut(Message.Statut.RECU);
@@ -187,12 +158,10 @@ public class ClientHandler implements Runnable {
         }
         db.saveMessage(message);
 
-        // RG12 : Journaliser les envois de messages
         LOGGER.info("MESSAGE: " + username + " -> " + msg.getReceiver() + " (" + msg.getContent().length() + " chars)");
 
         String timestamp = message.getDateEnvoi().format(DateTimeFormatter.ofPattern("HH:mm"));
 
-        // Envoyer au destinataire s'il est en ligne
         if (receiverHandler != null) {
             ChatMessage delivery = new ChatMessage(ChatMessage.Type.RECEIVE_MESSAGE);
             delivery.setSender(username);
@@ -202,7 +171,6 @@ public class ClientHandler implements Runnable {
             receiverHandler.sendMessage(delivery);
         }
 
-        // Confirmer l'envoi à l'expéditeur
         ChatMessage confirm = new ChatMessage(ChatMessage.Type.RECEIVE_MESSAGE);
         confirm.setSender(username);
         confirm.setReceiver(msg.getReceiver());
@@ -218,10 +186,8 @@ public class ClientHandler implements Runnable {
 
         if (currentUser == null || otherUser == null) return;
 
-        // RG8 : L'historique affiché par ordre chronologique (ORDER BY dateEnvoi ASC dans la requête)
         List<Message> history = db.getMessagesBetweenUsers(currentUser.getId(), otherUser.getId());
 
-        // Marquer les messages reçus comme lus
         for (Message m : history) {
             if (m.getReceiver().getId().equals(currentUser.getId()) && m.getStatut() != Message.Statut.LU) {
                 db.markMessageAsRead(m);
@@ -245,7 +211,6 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleLogout() {
-        // RG4 : À la déconnexion le statut devient OFFLINE
         if (username != null) {
             Database db = Database.getInstance();
             User user = db.findUserByUsername(username);
@@ -253,7 +218,6 @@ public class ClientHandler implements Runnable {
                 user.setStatus(User.Status.OFFLINE);
                 db.updateUser(user);
             }
-            // RG12 : Journaliser les déconnexions
             LOGGER.info("DECONNEXION: " + username);
             ChatServer.removeClient(username);
             ChatServer.broadcastUserList();
@@ -263,7 +227,6 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleDisconnect() {
-        // RG10 : En cas de perte de connexion, passer hors ligne
         if (username != null) {
             Database db = Database.getInstance();
             User user = db.findUserByUsername(username);
@@ -317,7 +280,6 @@ public class ClientHandler implements Runnable {
         return username;
     }
 
-    // RG9 : Les mots de passe doivent être stockés sous forme hachée
     private String hashPassword(String password) {
         try {
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
