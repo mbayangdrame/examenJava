@@ -3,100 +3,86 @@ package org.example.examenjava;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
-import javafx.scene.control.Label;
-import javafx.scene.control.Button;
+import javafx.scene.control.*;
 import javafx.stage.Stage;
-import javafx.geometry.Pos;
-import javafx.scene.layout.VBox;
-import org.example.examenjava.Repository.Database;
-import org.example.examenjava.Entity.User;
+import org.example.examenjava.network.ChatClient;
+import org.example.examenjava.network.ChatMessage;
 
 public class LoginController {
-    @FXML
-    private TextField usernameField;
-
-    @FXML
-    private PasswordField passwordField;
-
-    @FXML
-    private Label errorLabel;
-
-    @FXML
-    private Button loginButton;
-
-    @FXML
-    private Button registerLinkButton;
-
-    private User currentUser;
+    @FXML private TextField usernameField;
+    @FXML private PasswordField passwordField;
+    @FXML private Label errorLabel;
+    @FXML private Button loginButton;
+    @FXML private Button registerLinkButton;
 
     @FXML
     protected void onLoginButtonClick() {
-        String username = usernameField.getText();
+        String username = usernameField.getText().trim();
         String password = passwordField.getText();
 
         if (username.isEmpty() || password.isEmpty()) {
-            errorLabel.setText("Veuillez remplir tous les champs");
+            showError("Veuillez remplir tous les champs");
             return;
         }
-        User user = Database.getInstance().findUserByUsername(username);
-        if (user == null) {
-            errorLabel.setText("Utilisateur inconnu");
+
+        ChatClient client = new ChatClient();
+        if (!client.connect()) {
+            showError("Impossible de se connecter au serveur.");
             return;
         }
-        String hashed = Integer.toHexString(password.hashCode());
-        if (!user.getPassword().equals(hashed)) {
-            errorLabel.setText("Mot de passe incorrect");
+
+        ChatMessage response = client.sendLoginAndWait(username, password);
+        if (response == null) {
+            showError("Erreur de communication avec le serveur");
+            client.disconnect();
             return;
         }
-        if (user.getStatus() == User.Status.ONLINE) {
-            errorLabel.setText("Cet utilisateur est déjà connecté");
-            return;
+
+        if (response.getType() == ChatMessage.Type.LOGIN_SUCCESS) {
+            openMessagingApplication(client, response);
+        } else {
+            showError(response.getContent());
+            client.disconnect();
         }
-        user.setStatus(User.Status.ONLINE);
-        Database.getInstance().updateUser(user);
-        this.currentUser = user;
-        openMessagingApplication();
     }
 
-    private void openMessagingApplication() {
+    private void openMessagingApplication(ChatClient client, ChatMessage loginResponse) {
         try {
             Stage currentStage = (Stage) loginButton.getScene().getWindow();
             FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("messaging-view.fxml"));
-            Scene scene = new Scene(fxmlLoader.load(), 900, 700);
+            Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
             scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
+
             MessagingController controller = fxmlLoader.getController();
-            controller.setCurrentUser(currentUser);
-            currentStage.setTitle("Messagerie Interne");
+            controller.initWithClient(client, loginResponse);
+
+            currentStage.setTitle("Messagerie Interne - " + loginResponse.getSender());
             currentStage.setScene(scene);
+            currentStage.setMinWidth(900);
+            currentStage.setMinHeight(600);
         } catch (Exception e) {
-            errorLabel.setText("Erreur lors de l'ouverture de la messagerie.");
+            e.printStackTrace();
+            showError("Erreur lors de l'ouverture de la messagerie.");
         }
     }
 
     @FXML
     protected void onRegisterLinkClick() {
         try {
-
             Stage currentStage = (Stage) registerLinkButton.getScene().getWindow();
-
-            FXMLLoader loader = new FXMLLoader(
-                    HelloApplication.class.getResource("register-view.fxml")
-            );
-
-            Scene scene = new Scene(loader.load(), 600, 500);
-
-            scene.getStylesheets().add(
-                    HelloApplication.class.getResource("styles.css").toExternalForm()
-            );
-
-            currentStage.setTitle("Inscription utilisateur");
+            FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("register-view.fxml"));
+            Scene scene = new Scene(loader.load(), 550, 650);
+            scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
+            currentStage.setTitle("Inscription - Messagerie Interne");
             currentStage.setScene(scene);
-
         } catch (Exception e) {
             e.printStackTrace();
-            errorLabel.setText("Erreur lors de l'ouverture de la page d'inscription.");
+            showError("Erreur lors de l'ouverture de la page d'inscription.");
         }
+    }
+
+    private void showError(String message) {
+        errorLabel.setText(message);
+        errorLabel.setStyle("-fx-text-fill: #ef4444; -fx-font-size: 12;");
     }
 }

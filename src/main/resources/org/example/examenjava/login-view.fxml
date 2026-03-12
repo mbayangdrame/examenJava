@@ -7,51 +7,77 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 
-<VBox alignment="CENTER" spacing="15.0" style="-fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e); -fx-padding: 20;" xmlns:fx="http://javafx.com/fxml"
+<VBox alignment="CENTER" spacing="0"
+      style="-fx-background-color: linear-gradient(to bottom right, #4f46e5, #7c3aed, #6366f1);"
+      xmlns:fx="http://javafx.com/fxml"
       fx:controller="org.example.examenjava.LoginController">
 
-  <VBox alignment="CENTER" spacing="20.0" style="-fx-background-color: white; -fx-border-radius: 10; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 5);" VBox.vgrow="NEVER">
+  <!-- Main Card -->
+  <VBox alignment="CENTER" spacing="0" maxWidth="400"
+        style="-fx-background-color: white; -fx-background-radius: 16; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 30, 0, 0, 10);">
     <padding>
-      <Insets bottom="40.0" left="40.0" right="40.0" top="40.0"/>
+      <Insets bottom="40" left="40" right="40" top="35"/>
     </padding>
 
-    <!-- Title -->
-    <Label text="Messagerie Interne" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #2c3e50;">
-      <font>
-        <Font name="Arial" size="28.0"/>
-      </font>
-    </Label>
+    <!-- Logo / Icon -->
+    <StackPane>
+      <Region style="-fx-background-color: linear-gradient(to bottom right, #6366f1, #8b5cf6); -fx-background-radius: 30; -fx-min-width: 60; -fx-min-height: 60; -fx-max-width: 60; -fx-max-height: 60;"/>
+      <Label text="M" style="-fx-text-fill: white; -fx-font-size: 26; -fx-font-weight: bold;"/>
+    </StackPane>
 
-    <Label text="Bienvenue" style="-fx-font-size: 14; -fx-text-fill: #7f8c8d;"/>
+    <Region style="-fx-min-height: 16;"/>
+
+    <!-- Title -->
+    <Label text="Messagerie Interne" style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+    <Region style="-fx-min-height: 4;"/>
+    <Label text="Connectez-vous pour acceder a vos messages" style="-fx-font-size: 12; -fx-text-fill: #94a3b8;"/>
+
+    <Region style="-fx-min-height: 28;"/>
 
     <!-- Username Field -->
-    <Label text="Nom d'utilisateur" style="-fx-font-size: 12; -fx-text-fill: #2c3e50;"/>
-    <TextField fx:id="usernameField" promptText="Entrez votre nom d'utilisateur"
-               style="-fx-padding: 10; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-font-size: 12;"/>
+    <Label text="Nom d'utilisateur" style="-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #475569;"/>
+    <Region style="-fx-min-height: 6;"/>
+    <TextField fx:id="usernameField" promptText="Entrez votre identifiant" styleClass="modern-field"/>
+
+    <Region style="-fx-min-height: 16;"/>
 
     <!-- Password Field -->
-    <Label text="Mot de passe" style="-fx-font-size: 12; -fx-text-fill: #2c3e50;"/>
-    <PasswordField fx:id="passwordField" promptText="Entrez votre mot de passe"
-                   style="-fx-padding: 10; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-font-size: 12;"/>
+    <Label text="Mot de passe" style="-fx-font-size: 12; -fx-font-weight: bold; -fx-text-fill: #475569;"/>
+    <Region style="-fx-min-height: 6;"/>
+    <PasswordField fx:id="passwordField" promptText="Entrez votre mot de passe" styleClass="modern-field"/>
+
+    <Region style="-fx-min-height: 10;"/>
 
     <!-- Error Label -->
-    <Label fx:id="errorLabel" style="-fx-text-fill: #e74c3c; -fx-font-size: 11;"/>
+    <Label fx:id="errorLabel" style="-fx-text-fill: #ef4444; -fx-font-size: 11;" wrapText="true"/>
+
+    <Region style="-fx-min-height: 16;"/>
 
     <!-- Login Button -->
-    <Button fx:id="loginButton" text="Connexion" onAction="#onLoginButtonClick"
-            style="-fx-padding: 12; -fx-font-size: 14; -fx-font-weight: bold; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 5; -fx-background-radius: 5; -fx-cursor: hand;">
-    </Button>
+    <Button fx:id="loginButton" text="Se connecter" onAction="#onLoginButtonClick"
+            styleClass="btn-primary" maxWidth="Infinity"/>
 
-    <!-- Demo Credentials -->
-    <Label text="Démo: admin / 123456" style="-fx-font-size: 10; -fx-text-fill: #95a5a6; -fx-font-style: italic;"/>
+    <Region style="-fx-min-height: 12;"/>
 
-    <!-- Lien vers inscription -->
-    <Button fx:id="registerLinkButton" text="Créer un compte" onAction="#onRegisterLinkClick"
-            style="-fx-padding: 8; -fx-font-size: 12; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 5; -fx-background-radius: 5; -fx-cursor: hand;"/>
+    <!-- Separator -->
+    <HBox alignment="CENTER" spacing="10">
+      <Region style="-fx-background-color: #e2e8f0; -fx-min-height: 1; -fx-max-height: 1;" HBox.hgrow="ALWAYS"/>
+      <Label text="ou" style="-fx-font-size: 11; -fx-text-fill: #94a3b8;"/>
+      <Region style="-fx-background-color: #e2e8f0; -fx-min-height: 1; -fx-max-height: 1;" HBox.hgrow="ALWAYS"/>
+    </HBox>
+
+    <Region style="-fx-min-height: 12;"/>
+
+    <!-- Register Link -->
+    <Button fx:id="registerLinkButton" text="Creer un nouveau compte" onAction="#onRegisterLinkClick"
+            styleClass="btn-secondary" maxWidth="Infinity"/>
 
   </VBox>
 
-</VBox>
+  <Region style="-fx-min-height: 20;"/>
+  <Label text="Association Messagerie v1.0" style="-fx-text-fill: rgba(255,255,255,0.6); -fx-font-size: 11;"/>
 
+</VBox>

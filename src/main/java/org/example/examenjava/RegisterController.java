@@ -1,78 +1,88 @@
 package org.example.examenjava;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ComboBox;
-import javafx.event.ActionEvent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-
-import org.example.examenjava.Repository.Database;
-import org.example.examenjava.Entity.User;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.stage.Stage;
+import org.example.examenjava.network.ChatClient;
+import org.example.examenjava.network.ChatMessage;
 
 public class RegisterController {
-    @FXML
-    private TextField usernameField;
-    @FXML
-    private PasswordField passwordField;
-    @FXML
-    private Label errorLabel;
-    @FXML
-    private Button registerButton;
-    @FXML
-    private Button backToLoginButton;
-    @FXML
-    private TextField emailField;
-    @FXML
-    private TextField fullNameField;
-    @FXML
-    private ComboBox<String> roleComboBox;
+    @FXML private TextField usernameField;
+    @FXML private PasswordField passwordField;
+    @FXML private TextField emailField;
+    @FXML private TextField fullNameField;
+    @FXML private ComboBox<String> roleComboBox;
+    @FXML private Label errorLabel;
+    @FXML private Button registerButton;
+    @FXML private Button backToLoginButton;
 
     @FXML
-    protected void onRegisterButtonClick(ActionEvent event) {
-        String username = usernameField.getText();
+    protected void onRegisterButtonClick() {
+        String username = usernameField.getText().trim();
         String password = passwordField.getText();
-        String email = emailField.getText();
-        String fullName = fullNameField.getText();
+        String email = emailField.getText().trim();
+        String fullName = fullNameField.getText().trim();
         String roleStr = roleComboBox.getValue();
-        if (username.isEmpty() || password.isEmpty() || email.isEmpty() || fullName.isEmpty() || roleStr == null) {
-            errorLabel.setText("Veuillez remplir tous les champs.");
-            return;
-        }
-        if (Database.getInstance().findUserByUsername(username) != null) {
-            errorLabel.setText("Nom d'utilisateur déjà utilisé.");
-            return;
-        }
-        User newUser = new User();
-        newUser.setUsername(username);
-        newUser.setPassword(hashPassword(password));
-        newUser.setEmail(email);
-        newUser.setFullName(fullName);
-        newUser.setRole(User.Role.valueOf(roleStr));
-        newUser.setStatus(User.Status.OFFLINE);
-        newUser.setDateCreation(java.time.LocalDateTime.now());
-        Database.getInstance().saveUser(newUser);
-        errorLabel.setText("Inscription réussie ! Vous pouvez vous connecter.");
-    }
 
-    private String hashPassword(String password) {
-        // Simple hash pour démo, à remplacer par un vrai hash sécurisé
-        return Integer.toHexString(password.hashCode());
+        if (username.isEmpty() || password.isEmpty() || email.isEmpty() || fullName.isEmpty() || roleStr == null) {
+            showError("Veuillez remplir tous les champs.");
+            return;
+        }
+
+        if (password.length() < 4) {
+            showError("Le mot de passe doit contenir au moins 4 caracteres.");
+            return;
+        }
+
+        ChatClient client = new ChatClient();
+        if (!client.connect()) {
+            showError("Impossible de se connecter au serveur.");
+            return;
+        }
+
+        ChatMessage response = client.sendRegisterAndWait(username, password, email, fullName, roleStr);
+        client.disconnect();
+
+        if (response == null) {
+            showError("Erreur de communication avec le serveur.");
+            return;
+        }
+
+        if (response.getType() == ChatMessage.Type.REGISTER_SUCCESS) {
+            showSuccess("Inscription reussie ! Vous pouvez vous connecter.");
+            usernameField.clear();
+            passwordField.clear();
+            emailField.clear();
+            fullNameField.clear();
+            roleComboBox.setValue(null);
+        } else {
+            showError(response.getContent());
+        }
     }
 
     @FXML
-    protected void onBackToLoginClick(ActionEvent event) {
+    protected void onBackToLoginClick() {
         try {
             Stage stage = (Stage) backToLoginButton.getScene().getWindow();
-            Parent root = FXMLLoader.load(getClass().getResource("/org/example/examenjava/login-view.fxml"));
-            stage.setScene(new Scene(root));
+            FXMLLoader loader = new FXMLLoader(HelloApplication.class.getResource("login-view.fxml"));
+            Scene scene = new Scene(loader.load(), 500, 600);
+            scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
+            stage.setTitle("Messagerie Interne - Connexion");
+            stage.setScene(scene);
         } catch (Exception e) {
-            errorLabel.setText("Erreur lors du retour à la connexion.");
+            showError("Erreur lors du retour a la connexion.");
         }
+    }
+
+    private void showError(String message) {
+        errorLabel.setText(message);
+        errorLabel.setStyle("-fx-text-fill: #ef4444; -fx-font-size: 12; -fx-font-weight: bold;");
+    }
+
+    private void showSuccess(String message) {
+        errorLabel.setText(message);
+        errorLabel.setStyle("-fx-text-fill: #10b981; -fx-font-size: 12; -fx-font-weight: bold;");
     }
 }

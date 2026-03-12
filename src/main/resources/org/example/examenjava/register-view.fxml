@@ -8,83 +8,101 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.text.Font?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.collections.FXCollections?>
 <?import java.lang.String?>
 
-<VBox alignment="CENTER" spacing="15.0" style="-fx-background-color: linear-gradient(to bottom, #2c3e50, #34495e); -fx-padding: 20;" xmlns:fx="http://javafx.com/fxml"
+<VBox alignment="CENTER" spacing="0"
+      style="-fx-background-color: linear-gradient(to bottom right, #4f46e5, #7c3aed, #6366f1);"
+      xmlns:fx="http://javafx.com/fxml"
       fx:controller="org.example.examenjava.RegisterController">
 
-  <VBox alignment="CENTER" spacing="20.0" style="-fx-background-color: white; -fx-border-radius: 10; -fx-background-radius: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 5);" VBox.vgrow="NEVER">
+  <!-- Main Card -->
+  <VBox alignment="CENTER" spacing="0" maxWidth="480"
+        style="-fx-background-color: white; -fx-background-radius: 16; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 30, 0, 0, 10);">
     <padding>
-      <Insets bottom="40.0" left="40.0" right="40.0" top="40.0"/>
+      <Insets bottom="35" left="40" right="40" top="30"/>
     </padding>
 
-    <!-- Title -->
-    <Label text="Inscription" style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: #2c3e50;">
-      <font>
-        <Font name="Arial" size="28.0"/>
-      </font>
-    </Label>
-    <Label text="Créer un compte utilisateur" style="-fx-font-size: 14; -fx-text-fill: #7f8c8d;"/>
+    <!-- Logo -->
+    <StackPane>
+      <Region style="-fx-background-color: linear-gradient(to bottom right, #10b981, #059669); -fx-background-radius: 30; -fx-min-width: 60; -fx-min-height: 60; -fx-max-width: 60; -fx-max-height: 60;"/>
+      <Label text="+" style="-fx-text-fill: white; -fx-font-size: 28; -fx-font-weight: bold;"/>
+    </StackPane>
 
-    <!-- Inputs group 1: Username + Email -->
-    <HBox spacing="10">
-      <VBox>
-        <Label text="Nom d'utilisateur" style="-fx-font-size: 12; -fx-text-fill: #2c3e50;"/>
-        <TextField fx:id="usernameField" promptText="Nom d'utilisateur"
-                   style="-fx-padding: 10; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-font-size: 12;"/>
+    <Region style="-fx-min-height: 12;"/>
+
+    <Label text="Creer un compte" style="-fx-font-size: 22; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+    <Region style="-fx-min-height: 3;"/>
+    <Label text="Rejoignez la messagerie de l'association" style="-fx-font-size: 12; -fx-text-fill: #94a3b8;"/>
+
+    <Region style="-fx-min-height: 24;"/>
+
+    <!-- Row 1: Username + Email -->
+    <HBox spacing="12">
+      <VBox HBox.hgrow="ALWAYS">
+        <Label text="Nom d'utilisateur" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #475569;"/>
+        <Region style="-fx-min-height: 4;"/>
+        <TextField fx:id="usernameField" promptText="Identifiant" styleClass="modern-field"/>
       </VBox>
-      <VBox>
-        <Label text="Email" style="-fx-font-size: 12; -fx-text-fill: #2c3e50;"/>
-        <TextField fx:id="emailField" promptText="Email"
-                   style="-fx-padding: 10; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-font-size: 12;"/>
+      <VBox HBox.hgrow="ALWAYS">
+        <Label text="Email" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #475569;"/>
+        <Region style="-fx-min-height: 4;"/>
+        <TextField fx:id="emailField" promptText="votre@email.com" styleClass="modern-field"/>
       </VBox>
     </HBox>
 
-    <!-- Inputs group 2: Password + Full Name -->
-    <HBox spacing="10">
-      <VBox>
-        <Label text="Mot de passe" style="-fx-font-size: 12; -fx-text-fill: #2c3e50;"/>
-        <PasswordField fx:id="passwordField" promptText="Mot de passe"
-                       style="-fx-padding: 10; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-font-size: 12;"/>
+    <Region style="-fx-min-height: 14;"/>
+
+    <!-- Row 2: Password + Full Name -->
+    <HBox spacing="12">
+      <VBox HBox.hgrow="ALWAYS">
+        <Label text="Mot de passe" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #475569;"/>
+        <Region style="-fx-min-height: 4;"/>
+        <PasswordField fx:id="passwordField" promptText="Mot de passe" styleClass="modern-field"/>
       </VBox>
-      <VBox>
-        <Label text="Nom complet" style="-fx-font-size: 12; -fx-text-fill: #2c3e50;"/>
-        <TextField fx:id="fullNameField" promptText="Nom complet"
-                   style="-fx-padding: 10; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-font-size: 12;"/>
+      <VBox HBox.hgrow="ALWAYS">
+        <Label text="Nom complet" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #475569;"/>
+        <Region style="-fx-min-height: 4;"/>
+        <TextField fx:id="fullNameField" promptText="Prenom Nom" styleClass="modern-field"/>
       </VBox>
     </HBox>
 
-    <!-- Inputs group 3: Role + Retour Login -->
-    <HBox spacing="10">
-      <VBox>
-        <Label text="Rôle" style="-fx-font-size: 12; -fx-text-fill: #2c3e50;"/>
-        <ComboBox fx:id="roleComboBox" promptText="Choisissez un rôle"
-                  style="-fx-padding: 10; -fx-border-color: #bdc3c7; -fx-border-radius: 5; -fx-font-size: 12;">
-          <items>
-            <FXCollections fx:factory="observableArrayList">
-              <String fx:value="ORGANISATEUR"/>
-              <String fx:value="MEMBRE"/>
-              <String fx:value="BENEVOLE"/>
-            </FXCollections>
-          </items>
-        </ComboBox>
-      </VBox>
-    </HBox>
+    <Region style="-fx-min-height: 14;"/>
+
+    <!-- Row 3: Role -->
+    <Label text="Role dans l'association" style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #475569;"/>
+    <Region style="-fx-min-height: 4;"/>
+    <ComboBox fx:id="roleComboBox" promptText="Selectionnez votre role" styleClass="modern-combo" maxWidth="Infinity">
+      <items>
+        <FXCollections fx:factory="observableArrayList">
+          <String fx:value="ORGANISATEUR"/>
+          <String fx:value="MEMBRE"/>
+          <String fx:value="BENEVOLE"/>
+        </FXCollections>
+      </items>
+    </ComboBox>
+
+    <Region style="-fx-min-height: 10;"/>
 
     <!-- Error Label -->
-    <Label fx:id="errorLabel" style="-fx-text-fill: #e74c3c; -fx-font-size: 11;"/>
+    <Label fx:id="errorLabel" style="-fx-font-size: 11;" wrapText="true"/>
 
-    <!-- Register & Retour Login Buttons on same line -->
-    <HBox spacing="10" alignment="CENTER">
-      <Button fx:id="registerButton" text="S'inscrire" onAction="#onRegisterButtonClick"
-              style="-fx-padding: 12; -fx-font-size: 14; -fx-font-weight: bold; -fx-background-color: #27ae60; -fx-text-fill: white; -fx-border-radius: 5; -fx-background-radius: 5; -fx-cursor: hand;"/>
-      <Button fx:id="backToLoginButton" text="Retour à la connexion" onAction="#onBackToLoginClick"
-              style="-fx-padding: 8; -fx-font-size: 12; -fx-background-color: #3498db; -fx-text-fill: white; -fx-border-radius: 5; -fx-background-radius: 5; -fx-cursor: hand;"/>
-    </HBox>
+    <Region style="-fx-min-height: 18;"/>
 
+    <!-- Buttons -->
+    <Button fx:id="registerButton" text="S'inscrire" onAction="#onRegisterButtonClick"
+            styleClass="btn-success" maxWidth="Infinity"/>
+
+    <Region style="-fx-min-height: 10;"/>
+
+    <Button fx:id="backToLoginButton" text="Retour a la connexion" onAction="#onBackToLoginClick"
+            styleClass="btn-ghost" maxWidth="Infinity"/>
 
   </VBox>
+
+  <Region style="-fx-min-height: 20;"/>
+  <Label text="Association Messagerie v1.0" style="-fx-text-fill: rgba(255,255,255,0.6); -fx-font-size: 11;"/>
 
 </VBox>

@@ -15,6 +15,8 @@ public class HelloApplication extends Application {
         scene.getStylesheets().add(HelloApplication.class.getResource("styles.css").toExternalForm());
         stage.setTitle("Messagerie Interne - Connexion");
         stage.setScene(scene);
+        stage.setMinWidth(450);
+        stage.setMinHeight(550);
         stage.show();
     }
 

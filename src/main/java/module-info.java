@@ -9,12 +9,15 @@ module org.example.examenjava {
     requires jakarta.persistence;
     requires org.hibernate.orm.core;
     requires java.sql;
+    requires java.logging;
 
     opens org.example.examenjava to javafx.fxml;
     opens org.example.examenjava.Entity to org.hibernate.orm.core;
+    opens org.example.examenjava.network to javafx.fxml;
 
     exports org.example.examenjava;
     exports org.example.examenjava.Entity;
     exports org.example.examenjava.Repository;
-    exports org.example.examenjava.utils;
+    exports org.example.examenjava.network;
+    exports org.example.examenjava.server;
 }
