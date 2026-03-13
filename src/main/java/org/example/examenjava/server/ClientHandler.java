@@ -565,7 +565,9 @@ public class ClientHandler implements Runnable {
             delivery.setContent(m.getContenu());
             delivery.setTimestamp(m.getDateEnvoi().format(TIME_FMT));
             sendMessage(delivery);
-            db.markMessageAsRead(m);
+            // RECU = livré sur l'appareil. LU sera mis quand l'utilisateur ouvrira la conversation.
+            // Ne pas marquer LU ici sinon READ_RECEIPT ne sera jamais envoyé à l'expéditeur.
+            db.markMessageAsDelivered(m);
         }
     }
 

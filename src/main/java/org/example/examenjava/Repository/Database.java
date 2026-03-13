@@ -262,6 +262,24 @@ public class Database {
         }
     }
 
+    /** Marque le message comme livré (RECU) — utilisé lors de la livraison offline au login */
+    public void markMessageAsDelivered(Message message) {
+        EntityManager em = createEntityManager();
+        try {
+            em.getTransaction().begin();
+            Message managed = em.find(Message.class, message.getId());
+            if (managed != null && managed.getStatut() == Message.Statut.ENVOYE) {
+                managed.setStatut(Message.Statut.RECU);
+            }
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) em.getTransaction().rollback();
+            System.err.println("Erreur marquage livraison: " + e.getMessage());
+        } finally {
+            em.close();
+        }
+    }
+
     // =====================================================================
     // GROUP METHODS
     // =====================================================================

@@ -122,6 +122,7 @@ public class MessagingController {
         messagesContainer.heightProperty().addListener((obs, o, n) ->
                 Platform.runLater(() -> chatScrollPane.setVvalue(1.0)));
         messageField.setOnAction(e -> onSendButtonClick());
+        messageField.textProperty().addListener((obs, old, val) -> updateSendButton(val));
 
         isDarkTheme = PREFS.getBoolean("darkTheme", true);
         themeToggle.setSelected(isDarkTheme);
@@ -194,6 +195,7 @@ public class MessagingController {
         chatClient.setOnDisconnected(this::onDisconnected);
 
         chatClient.startListening();
+        updateSendButton(messageField.getText()); // désactivé par défaut (champ vide)
         if ("ORGANISATEUR".equals(currentRole)) chatClient.requestPendingUsers();
     }
 
@@ -460,6 +462,17 @@ public class MessagingController {
     }
 
     // --- Actions UI ---
+    private void updateSendButton(String text) {
+        boolean blank    = text == null || text.trim().isEmpty();
+        boolean tooLong  = text != null && text.length() > 1000;
+        sendButton.setDisable(blank || tooLong);
+        if (tooLong) {
+            messageField.setStyle("-fx-border-color: #ef4444; -fx-border-width: 0 0 2 0;");
+        } else {
+            messageField.setStyle("");
+        }
+    }
+
     @FXML protected void onSendButtonClick() {
         String content = messageField.getText();
         if (content == null || content.trim().isEmpty()) return;
