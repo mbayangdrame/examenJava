@@ -66,6 +66,7 @@ public class ClientHandler implements Runnable {
             case PENDING_USERS_REQUEST -> handlePendingUsersRequest();
             case APPROVE_USER -> handleApproveUser(msg);
             case REJECT_USER -> handleRejectUser(msg);
+            case PING -> sendMessage(new ChatMessage(ChatMessage.Type.PONG));
             default -> LOGGER.warning("Type de message non gere: " + msg.getType());
         }
     }
@@ -82,7 +83,8 @@ public class ClientHandler implements Runnable {
 
     private void handleLogin(ChatMessage msg) {
         Database db = Database.getInstance();
-        User user = db.findUserByUsername(msg.getSender());
+        // Recherche insensible a la casse pour supporter toutes les variantes de saisie
+        User user = db.findUserByUsernameIgnoreCase(msg.getSender());
 
         if (user == null) {
             sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Utilisateur inconnu"));
@@ -97,9 +99,13 @@ public class ClientHandler implements Runnable {
             sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Mot de passe incorrect"));
             return;
         }
-        if (ChatServer.isUserOnline(msg.getSender())) {
-            sendMessage(makeResponse(ChatMessage.Type.LOGIN_FAILURE, "Cet utilisateur est deja connecte"));
-            return;
+        // Si une ancienne session traîne (déconnexion brutale), on la force-ferme
+        if (ChatServer.isUserOnline(user.getUsername())) {
+            ClientHandler old = ChatServer.getClient(user.getUsername());
+            if (old != null && old != this) {
+                LOGGER.info("SESSION FANTOME detectee pour " + user.getUsername() + " — kick de l'ancienne session");
+                old.forceDisconnect();
+            }
         }
 
         this.username = user.getUsername();
@@ -123,7 +129,8 @@ public class ClientHandler implements Runnable {
     private void handleRegister(ChatMessage msg) {
         Database db = Database.getInstance();
 
-        if (db.findUserByUsername(msg.getSender()) != null) {
+        // Vérification insensible à la casse : "Saliou" et "saliou" sont le même identifiant
+        if (db.findUserByUsernameIgnoreCase(msg.getSender()) != null) {
             sendMessage(makeResponse(ChatMessage.Type.REGISTER_FAILURE, "Nom d'utilisateur deja utilise"));
             return;
         }
@@ -599,6 +606,25 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             LOGGER.warning("Erreur d'envoi vers " + username + ": " + e.getMessage());
         }
+    }
+
+    /** Force la fermeture d'une session (ex : reconnexion d'un client déjà "connecté") */
+    public void forceDisconnect() {
+        running = false;
+        if (username != null) {
+            try {
+                Database db = Database.getInstance();
+                User user = db.findUserByUsername(username);
+                if (user != null) {
+                    user.setStatus(User.Status.OFFLINE);
+                    db.updateUser(user);
+                }
+            } catch (Exception e) {
+                LOGGER.warning("Erreur force disconnect " + username + ": " + e.getMessage());
+            }
+            ChatServer.removeClient(username);
+        }
+        closeConnection();
     }
 
     private void closeConnection() {

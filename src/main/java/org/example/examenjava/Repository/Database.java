@@ -153,6 +153,20 @@ public class Database {
         }
     }
 
+    /** Recherche insensible a la casse — pour eviter les doublons maj/min */
+    public User findUserByUsernameIgnoreCase(String username) {
+        EntityManager em = createEntityManager();
+        try {
+            return em.createQuery("SELECT u FROM User u WHERE LOWER(u.username) = LOWER(:username)", User.class)
+                    .setParameter("username", username)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        } finally {
+            em.close();
+        }
+    }
+
     public void updateUser(User user) {
         EntityManager em = createEntityManager();
         try {

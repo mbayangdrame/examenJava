@@ -33,7 +33,10 @@ public class ChatMessage implements Serializable {
         APPROVE_USER, APPROVE_USER_SUCCESS,
         REJECT_USER, REJECT_USER_SUCCESS,
 
-        ERROR
+        ERROR,
+
+        // Keepalive
+        PING, PONG
     }
 
     private Type type;

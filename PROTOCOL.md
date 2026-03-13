@@ -106,6 +106,13 @@ GroupInfo   { id, name, creatorUsername, membersCanSend, memberUsernames[] }
 |------|------|-----------------|-------------|
 | `ERROR` | S→C | content | Erreur générique serveur |
 
+### Keepalive (heartbeat)
+
+| Type | Sens | Champs utilisés | Description |
+|------|------|-----------------|-------------|
+| `PING` | C→S | — | Heartbeat envoyé toutes les 30s par le client |
+| `PONG` | S→C | — | Réponse immédiate du serveur au PING |
+
 ---
 
 ## Diagrammes de séquence
@@ -117,15 +124,19 @@ CLIENT                                    SERVEUR
   │                                          │
   │──── LOGIN(sender="alice", pwd="***") ───►│
   │                                          │
-  │                              [vérifie DB]│
-  │                              [SHA-256 hash]
+  │                   [recherche insensible casse]
   │                              [approved?] │
+  │                              [SHA-256 hash]
+  │                   [session fantôme ? → forceDisconnect]
   │                                          │
   │◄─── LOGIN_SUCCESS(role, fullName) ───────│
   │◄─── RECEIVE_MESSAGE(msg1) ───────────────│  (messages non-lus livrés)
   │◄─── RECEIVE_MESSAGE(msg2) ───────────────│
   │◄─── USER_LIST_UPDATE(users[]) ───────────│  (filtrée selon rôle alice)
   │◄─── GROUP_LIST_UPDATE(groups[]) ─────────│
+  │                                          │
+  │──── PING ────────────────────────────────►│  (toutes les 30s)
+  │◄─── PONG ────────────────────────────────│
 ```
 
 ### Accusés de lecture (Read Receipts)
@@ -185,6 +196,30 @@ NOUVEAU USER              SERVEUR              ALICE (orga)
 
 ---
 
+## Keepalive & stabilité de connexion
+
+Les VPS/NAT coupent les connexions TCP inactives après quelques minutes.
+Trois mécanismes combinés maintiennent la connexion :
+
+```
+1. TCP_NODELAY  (client + serveur)
+   → désactive l'algorithme de Nagle
+   → les petits paquets partent immédiatement (statuts, PING…)
+
+2. SO_KEEPALIVE (client + serveur)
+   → le kernel OS envoie des probes TCP keepalive (~2h par défaut)
+   → backup si le heartbeat applicatif est coupé
+
+3. Heartbeat applicatif  (client → serveur, toutes les 30s)
+   CLIENT                     SERVEUR
+     │──── PING ─────────────►│
+     │◄─── PONG ──────────────│
+   → maintient le NAT actif
+   → détecte les vraies déconnexions en < 35s
+```
+
+---
+
 ## Sécurité
 
 ### Hachage des mots de passe
@@ -198,6 +233,31 @@ password  ──► SHA-256 ──► 64 hex chars ──► stocké/comparé en
 Implémentation identique côté client (envoyé haché) et côté serveur (stocké haché).
 
 > Note : dans une version production, un sel par utilisateur (bcrypt/argon2) serait préférable.
+
+### Unicité des identifiants (case-insensitive)
+
+La recherche d'un utilisateur au login et à l'inscription utilise `LOWER()` en JPQL :
+
+```sql
+SELECT u FROM User u WHERE LOWER(u.username) = LOWER(:username)
+```
+
+Résultat : `"Saliou"`, `"SALIOU"`, `"saliou"` sont traités comme le même identifiant.
+L'inscription est bloquée si le nom existe déjà sous n'importe quelle casse.
+
+### Gestion des sessions fantômes
+
+Si un client se reconnecte alors qu'une session précédente (déconnexion brutale) est encore
+enregistrée dans `connectedClients`, le serveur force la fermeture de l'ancienne session :
+
+```
+1. handleLogin détecte isUserOnline(username) == true
+2. Appel de oldHandler.forceDisconnect()
+   → user.status = OFFLINE en DB
+   → connectedClients.remove(username)
+   → socket.close()
+3. Nouveau login procède normalement
+```
 
 ### Contrôle d'accès côté serveur
 

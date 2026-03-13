@@ -119,16 +119,17 @@ CLIENT                              SERVEUR
   │        (approved = false)          │  ──► notifie ORGANISATEURS connectés
   │                                    │
   │──── LOGIN(username, password) ─────►│
-  │                                    │  1. vérifie username existe
+  │                                    │  1. recherche username (insensible à la casse)
   │                                    │  2. vérifie approved = true
   │                                    │  3. vérifie SHA-256(pwd) == stocké
-  │                                    │  4. vérifie non déjà connecté
+  │                                    │  4. si session fantôme → forceDisconnect() ancienne
   │◄─── LOGIN_SUCCESS(role, fullName) ──│
   │◄─── RECEIVE_MESSAGE* (unread msgs) ─│  messages non-lus livrés
   │◄─── USER_LIST_UPDATE ───────────────│  liste contacts filtrée par rôle
   │◄─── GROUP_LIST_UPDATE ──────────────│  groupes dont user est membre
   │                                    │
   │  [startListening() thread daemon]  │
+  │  [ping scheduler 30s]             │
 ```
 
 ---
@@ -201,14 +202,21 @@ MessagingController
 │   ├── "bob"        → 3    (3 msgs non-lus de bob)
 │   └── "group:42"   → 1
 │
-└── sentCheckmarks : Map<String, List<Label>>
-    └── "bob"        → [Label "✓", Label "✓✓", ...]
-                        (refs vers les labels affichés dans la UI)
-                        mis à jour en bleu sur READ_RECEIPT
+├── sentCheckmarks : Map<String, List<Label>>
+│   └── "bob"        → [Label "✓", Label "✓✓", ...]
+│                       (refs vers les labels affichés dans la UI)
+│                       mis à jour en bleu sur READ_RECEIPT
+│
+└── lastContactActivity : Map<String, Long>
+    └── "bob"        → 1741823145000   (System.currentTimeMillis() dernier msg)
+                        utilisé pour trier la liste contacts (plus récent en haut)
 ```
 
 **Règle :** Premier clic sur un contact → requête serveur + mise en cache.
 Clics suivants → lecture depuis cache (zéro requête réseau).
+
+**Tri des contacts :** La liste est triée par `lastContactActivity` décroissant.
+Mis à jour à chaque message envoyé/reçu et à chaque chargement d'historique.
 
 ---
 
@@ -225,7 +233,21 @@ Thread daemon "ChatClient-listener"
 ├── Platform.runLater( handleServerMessage(msg) )
 └── Si IOException → callback onDisconnected
 
+Thread daemon "ping-scheduler"  (ScheduledExecutorService, 1 thread)
+├── Toutes les 30 secondes : envoie ChatMessage(PING)
+├── synchronized(out) pour éviter collision avec le thread listener
+└── Maintient la connexion vivante à travers les NAT/firewalls
+
 Thread par client (serveur)
 ├── ClientHandler.run() boucle infinie
-└── sendMessage() est synchronized
+├── sendMessage() est synchronized
+└── PING reçu → répond PONG immédiatement (sans log)
 ```
+
+### Sécurité du stream `out` côté client
+
+Le `ObjectOutputStream out` est partagé entre :
+- Le thread JavaFX (envoi de messages utilisateur)
+- Le thread ping-scheduler (envoi des PING)
+
+Tous les accès passent par `synchronized(out)` via la méthode privée `send(ChatMessage)`.

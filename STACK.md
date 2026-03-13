@@ -198,6 +198,7 @@ module org.example.examenjava {
     requires java.logging;
     requires java.desktop;   // java.awt.Toolkit (beep)
     requires java.prefs;     // Preferences (thème persistant)
+    // java.util.concurrent (ScheduledExecutorService ping heartbeat) → java.base, pas de requires
 
     // Ouverture nécessaire pour Hibernate et JavaFX
     opens org.example.examenjava to javafx.fxml;
@@ -211,6 +212,27 @@ module org.example.examenjava {
     exports org.example.examenjava.network;
     exports org.example.examenjava.server;
 }
+```
+
+---
+
+## Réseau & stabilité
+
+### Options socket activées
+
+| Option | Valeur | Côté | Effet |
+|--------|--------|------|-------|
+| `TCP_NODELAY` | `true` | client + serveur | Désactive Nagle — envoi immédiat sans attendre 200ms |
+| `SO_KEEPALIVE` | `true` | client + serveur | Probes TCP keepalive OS (~2h) en backup |
+
+### Heartbeat applicatif
+
+```
+Intervalle : 30 secondes
+Implémentation : ScheduledExecutorService (1 thread daemon)
+Flux : client → PING → serveur → PONG → client (ignoré silencieusement)
+Synchronisation : synchronized(out) partagé avec les envois normaux
+Arrêt : pingScheduler.shutdownNow() dans disconnect()
 ```
 
 ---

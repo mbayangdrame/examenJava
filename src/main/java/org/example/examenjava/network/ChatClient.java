@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -19,6 +22,7 @@ public class ChatClient {
     private ObjectInputStream in;
     private boolean connected = false;
     private boolean listening = false;
+    private ScheduledExecutorService pingScheduler;
 
     // Callbacks
     private Consumer<ChatMessage> onMessageReceived;
@@ -35,6 +39,8 @@ public class ChatClient {
     public boolean connect() {
         try {
             socket = new Socket(SERVER_HOST, SERVER_PORT);
+            socket.setTcpNoDelay(true); // envoi immédiat, pas de bufferisation Nagle
+            socket.setKeepAlive(true);  // keepalive OS en backup
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
             connected = true;
@@ -80,6 +86,18 @@ public class ChatClient {
     public void startListening() {
         if (listening) return;
         listening = true;
+
+        // Heartbeat : PING toutes les 30s pour maintenir la connexion à travers les NAT/firewalls
+        pingScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "ping-scheduler");
+            t.setDaemon(true);
+            return t;
+        });
+        pingScheduler.scheduleAtFixedRate(
+            () -> send(new ChatMessage(ChatMessage.Type.PING)),
+            30, 30, TimeUnit.SECONDS
+        );
+
         Thread t = new Thread(() -> {
             try {
                 while (connected) {
@@ -113,145 +131,80 @@ public class ChatClient {
             case CREATE_GROUP_SUCCESS, ADD_TO_GROUP -> { if (onApprovalResult != null) onApprovalResult.accept(msg.getContent()); }
             case CREATE_GROUP_FAILURE -> { if (onError != null) onError.accept(msg.getContent()); }
             case ERROR -> { if (onError != null) onError.accept(msg.getContent()); }
+            case PONG -> { /* keepalive — rien à faire */ }
             default -> LOGGER.info("Message recu: " + msg.getType());
+        }
+    }
+
+    /** Envoi thread-safe (partagé avec le ping scheduler) */
+    private void send(ChatMessage msg) {
+        if (!connected) return;
+        try {
+            synchronized (out) { out.writeObject(msg); out.flush(); out.reset(); }
+        } catch (IOException e) {
+            LOGGER.warning("Erreur envoi " + msg.getType() + ": " + e.getMessage());
         }
     }
 
     // ---- Envoi messages 1:1 ----
     public void sendChatMessage(String receiver, String content) {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.SEND_MESSAGE);
-            msg.setReceiver(receiver);
-            msg.setContent(content);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur envoi message: " + e.getMessage());
-        }
+        ChatMessage msg = new ChatMessage(ChatMessage.Type.SEND_MESSAGE);
+        msg.setReceiver(receiver); msg.setContent(content);
+        send(msg);
     }
 
     public void requestHistory(String otherUsername) {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.REQUEST_HISTORY);
-            msg.setReceiver(otherUsername);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur demande historique: " + e.getMessage());
-        }
+        ChatMessage msg = new ChatMessage(ChatMessage.Type.REQUEST_HISTORY);
+        msg.setReceiver(otherUsername);
+        send(msg);
     }
 
     // ---- Groupes ----
     public void createGroup(String groupName) {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.CREATE_GROUP);
-            msg.setGroupName(groupName);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur creation groupe: " + e.getMessage());
-        }
+        ChatMessage msg = new ChatMessage(ChatMessage.Type.CREATE_GROUP);
+        msg.setGroupName(groupName);
+        send(msg);
     }
 
     public void addToGroup(Long groupId, String username) {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.ADD_TO_GROUP);
-            msg.setGroupId(groupId);
-            msg.setReceiver(username);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur ajout groupe: " + e.getMessage());
-        }
+        ChatMessage msg = new ChatMessage(ChatMessage.Type.ADD_TO_GROUP);
+        msg.setGroupId(groupId); msg.setReceiver(username);
+        send(msg);
     }
 
     public void removeFromGroup(Long groupId, String username) {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.REMOVE_FROM_GROUP);
-            msg.setGroupId(groupId);
-            msg.setReceiver(username);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur retrait groupe: " + e.getMessage());
-        }
+        ChatMessage msg = new ChatMessage(ChatMessage.Type.REMOVE_FROM_GROUP);
+        msg.setGroupId(groupId); msg.setReceiver(username);
+        send(msg);
     }
 
     public void sendGroupMessage(Long groupId, String content) {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.SEND_GROUP_MESSAGE);
-            msg.setGroupId(groupId);
-            msg.setContent(content);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur envoi message groupe: " + e.getMessage());
-        }
+        ChatMessage msg = new ChatMessage(ChatMessage.Type.SEND_GROUP_MESSAGE);
+        msg.setGroupId(groupId); msg.setContent(content);
+        send(msg);
     }
 
     public void requestGroupHistory(Long groupId) {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.REQUEST_GROUP_HISTORY);
-            msg.setGroupId(groupId);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur historique groupe: " + e.getMessage());
-        }
+        ChatMessage msg = new ChatMessage(ChatMessage.Type.REQUEST_GROUP_HISTORY);
+        msg.setGroupId(groupId);
+        send(msg);
     }
 
     public void toggleGroupSend(Long groupId, boolean membersCanSend) {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.TOGGLE_GROUP_SEND);
-            msg.setGroupId(groupId);
-            msg.setMembersCanSend(membersCanSend);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur toggle groupe: " + e.getMessage());
-        }
+        ChatMessage msg = new ChatMessage(ChatMessage.Type.TOGGLE_GROUP_SEND);
+        msg.setGroupId(groupId); msg.setMembersCanSend(membersCanSend);
+        send(msg);
     }
 
     // ---- Approbation ----
     public void requestPendingUsers() {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.PENDING_USERS_REQUEST);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur demande users en attente: " + e.getMessage());
-        }
+        send(new ChatMessage(ChatMessage.Type.PENDING_USERS_REQUEST));
     }
 
     public void approveUser(String username) {
-        if (!connected) return;
-        try {
-            ChatMessage msg = new ChatMessage(ChatMessage.Type.APPROVE_USER);
-            msg.setReceiver(username);
-            out.writeObject(msg);
-            out.flush();
-            out.reset();
-        } catch (IOException e) {
-            LOGGER.warning("Erreur approbation: " + e.getMessage());
-        }
+        ChatMessage msg = new ChatMessage(ChatMessage.Type.APPROVE_USER);
+        msg.setReceiver(username);
+        send(msg);
     }
 
     public void rejectUser(String username) {
@@ -281,6 +234,7 @@ public class ChatClient {
     public void disconnect() {
         connected = false;
         listening = false;
+        if (pingScheduler != null) pingScheduler.shutdownNow();
         try {
             if (out != null) out.close();
             if (in != null) in.close();

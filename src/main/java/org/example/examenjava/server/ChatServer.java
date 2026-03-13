@@ -40,6 +40,8 @@ public class ChatServer {
 
             while (!serverSocket.isClosed()) {
                 Socket clientSocket = serverSocket.accept();
+                clientSocket.setTcpNoDelay(true);  // envoi immédiat, pas de bufferisation Nagle
+                clientSocket.setKeepAlive(true);   // keepalive OS en backup
                 LOGGER.info("Nouvelle connexion depuis: " + clientSocket.getInetAddress().getHostAddress());
                 ClientHandler handler = new ClientHandler(clientSocket);
                 Thread clientThread = new Thread(handler);

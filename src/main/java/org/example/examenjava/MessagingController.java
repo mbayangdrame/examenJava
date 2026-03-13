@@ -104,6 +104,7 @@ public class MessagingController {
     private final Map<String, List<CachedMsg>> messageCache = new HashMap<>();
     private final Map<String, Integer> unreadCounts = new HashMap<>();
     private final Map<String, List<Label>> sentCheckmarks = new HashMap<>();
+    private final Map<String, Long> lastContactActivity = new HashMap<>();
 
     private boolean isDarkTheme = true;
     private static final Preferences PREFS = Preferences.userRoot().node("elan-app");
@@ -314,15 +315,18 @@ public class MessagingController {
         if (isOwn) {
             if (selectedContactUsername != null && msg.getReceiver().equals(selectedContactUsername)) {
                 String statut = msg.getStatus() != null ? msg.getStatus() : "ENVOYE";
+                lastContactActivity.put(selectedContactUsername, System.currentTimeMillis());
                 addAndCache(selectedContactUsername, msg.getSender(), msg.getContent(), msg.getTimestamp(), true, false, statut);
             }
             return;
         }
         String sender = msg.getSender();
+        lastContactActivity.put(sender, System.currentTimeMillis());
         if (selectedContactUsername != null && sender.equals(selectedContactUsername)) {
             addAndCache(sender, sender, msg.getContent(), msg.getTimestamp(), false, false, null);
         } else {
-            unreadCounts.merge(sender, 1, Integer::sum); userListView.refresh();
+            unreadCounts.merge(sender, 1, Integer::sum);
+            filterContacts(searchField.getText()); // re-trie + refresh
         }
         playNotificationSound(); flashTitle("Nouveau message de " + sender);
     }
@@ -345,6 +349,9 @@ public class MessagingController {
     private void onHistoryReceived(ChatMessage msg) {
         if (msg.getMessages() == null) return;
         String key = msg.getReceiver();
+        if (!msg.getMessages().isEmpty()) {
+            lastContactActivity.put(key, System.currentTimeMillis());
+        }
         messagesContainer.getChildren().clear();
         sentCheckmarks.remove(key);
         List<CachedMsg> cache = new ArrayList<>();
@@ -698,6 +705,11 @@ public class MessagingController {
                     || (u.fullName != null && u.fullName.toLowerCase().contains(query.toLowerCase())))
                 filtered.add(u.username);
         }
+        // Trier par dernière activité décroissante — la dernière conv en haut
+        filtered.sort((a, b) -> Long.compare(
+                lastContactActivity.getOrDefault(b, 0L),
+                lastContactActivity.getOrDefault(a, 0L)
+        ));
         String prev = userListView.getSelectionModel().getSelectedItem();
         userListView.getItems().setAll(filtered);
         if (prev != null && filtered.contains(prev)) userListView.getSelectionModel().select(prev);
