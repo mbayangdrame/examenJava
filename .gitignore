@@ -38,10 +38,17 @@ build/
 ### Mac OS ###
 .DS_Store
 
-### Documentation PDF (générés par pandoc, sauf README) ###
+### Documentation (MD et PDF générés, sauf README) ###
+ARCHITECTURE.md
 ARCHITECTURE.pdf
+PROTOCOL.md
 PROTOCOL.pdf
+STACK.md
 STACK.pdf
+TECHNOLOGIES.md
 TECHNOLOGIES.pdf
+DEPLOIEMENT.md
 DEPLOIEMENT.pdf
+PLAN_AMELIORATIONS.md
 PLAN_AMELIORATIONS.pdf
+RAPPORT.md
