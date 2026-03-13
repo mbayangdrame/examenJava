@@ -106,7 +106,7 @@ public class ChatServer {
                 switch (recipient.getRole()) {
                     case ORGANISATEUR -> include = true;
                     case MEMBRE -> include = (u.getRole() == User.Role.MEMBRE || u.getRole() == User.Role.ORGANISATEUR);
-                    case BENEVOLE -> include = false;
+                    case BENEVOLE -> include = (u.getRole() == User.Role.ORGANISATEUR);
                 }
                 if (include) {
                     filtered.add(new ChatMessage.UserInfo(

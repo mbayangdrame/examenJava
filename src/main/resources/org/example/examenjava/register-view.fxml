@@ -77,6 +77,7 @@
     <ComboBox fx:id="roleComboBox" promptText="Selectionnez votre role" styleClass="modern-combo" maxWidth="Infinity">
       <items>
         <FXCollections fx:factory="observableArrayList">
+          <String fx:value="ORGANISATEUR"/>
           <String fx:value="MEMBRE"/>
           <String fx:value="BENEVOLE"/>
         </FXCollections>

@@ -135,14 +135,9 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        // Seuls MEMBRE et BENEVOLE peuvent s'inscrire
         User.Role role;
         try {
             role = User.Role.valueOf(msg.getRole());
-            if (role == User.Role.ORGANISATEUR) {
-                sendMessage(makeResponse(ChatMessage.Type.REGISTER_FAILURE, "Impossible de creer un compte organisateur"));
-                return;
-            }
         } catch (Exception e) {
             sendMessage(makeResponse(ChatMessage.Type.REGISTER_FAILURE, "Role invalide"));
             return;

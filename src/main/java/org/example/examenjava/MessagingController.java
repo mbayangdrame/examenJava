@@ -138,7 +138,9 @@ public class MessagingController {
                 setText(null); setStyle("-fx-background-color: transparent; -fx-padding: 2;");
             }
         });
-        userListView.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> {
+        // setOnMouseClicked pour gérer aussi le re-clic sur un item déjà sélectionné
+        userListView.setOnMouseClicked(e -> {
+            String val = userListView.getSelectionModel().getSelectedItem();
             if (val != null) openContactChat(val);
         });
 
@@ -150,7 +152,9 @@ public class MessagingController {
                 setText(null); setStyle("-fx-background-color: transparent; -fx-padding: 2;");
             }
         });
-        groupListView.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> {
+        // setOnMouseClicked pour gérer aussi le re-clic sur un item déjà sélectionné
+        groupListView.setOnMouseClicked(e -> {
+            ChatMessage.GroupInfo val = groupListView.getSelectionModel().getSelectedItem();
             if (val != null) openGroupChat(val);
         });
 
@@ -225,6 +229,8 @@ public class MessagingController {
     // --- Ouvrir chat 1:1 ---
     private void openContactChat(String username) {
         selectedContactUsername = username; selectedGroup = null;
+        // Capturer avant suppression pour savoir si le cache doit être invalidé
+        boolean hadUnread = unreadCounts.containsKey(username);
         unreadCounts.remove(username); userListView.refresh();
 
         String color = getAvatarColor(username);
@@ -242,6 +248,9 @@ public class MessagingController {
         showInputBar(true); showChatPane();
 
         String key = username;
+        // Messages non lus reçus pendant qu'on était ailleurs → invalider le cache périmé
+        if (hadUnread) messageCache.remove(key);
+
         if (messageCache.containsKey(key)) {
             messagesContainer.getChildren().clear();
             sentCheckmarks.remove(key);
@@ -261,6 +270,7 @@ public class MessagingController {
     // --- Ouvrir chat groupe ---
     private void openGroupChat(ChatMessage.GroupInfo group) {
         selectedGroup = group; selectedContactUsername = null;
+        boolean hadUnread = unreadCounts.containsKey("group:" + group.id);
         unreadCounts.remove("group:" + group.id); groupListView.refresh();
 
         selectedUserAvatar.setStyle("-fx-background-color: #8b5cf6; -fx-background-radius: 22;");
@@ -282,6 +292,9 @@ public class MessagingController {
         showChatPane();
 
         String key = "group:" + group.id;
+        // Messages non lus reçus pendant qu'on était ailleurs → invalider le cache périmé
+        if (hadUnread) messageCache.remove(key);
+
         if (messageCache.containsKey(key)) {
             messagesContainer.getChildren().clear();
             for (CachedMsg m : messageCache.get(key)) addMessageBubble(m.sender, m.content, m.timestamp, m.isOwn, true, m.statut);

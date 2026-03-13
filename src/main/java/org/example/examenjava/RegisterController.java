@@ -56,7 +56,7 @@ public class RegisterController {
         }
 
         if (response.getType() == ChatMessage.Type.REGISTER_SUCCESS) {
-            showSuccess("Inscription reussie ! Vous pouvez vous connecter.");
+            showSuccess(response.getContent());
             usernameField.clear();
             passwordField.clear();
             emailField.clear();
