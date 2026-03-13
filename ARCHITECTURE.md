@@ -207,9 +207,14 @@ MessagingController
 │                       (refs vers les labels affichés dans la UI)
 │                       mis à jour en bleu sur READ_RECEIPT
 │
-└── lastContactActivity : Map<String, Long>
-    └── "bob"        → 1741823145000   (System.currentTimeMillis() dernier msg)
-                        utilisé pour trier la liste contacts (plus récent en haut)
+├── lastContactActivity : Map<String, Long>
+│   └── "bob"        → 1741823145000   (System.currentTimeMillis() dernier msg)
+│                       utilisé pour trier la liste contacts (plus récent en haut)
+│                       **persisté dans Preferences** (survit aux redémarrages)
+│
+└── knownGroupIds : Set<Long>
+    └── {42, 7, 15}   IDs des groupes connus au démarrage
+                       si un nouvel ID apparaît → notification + bascule panel groupes
 ```
 
 **Règle :** Premier clic sur un contact → requête serveur + mise en cache.
@@ -217,6 +222,10 @@ Clics suivants → lecture depuis cache (zéro requête réseau).
 
 **Tri des contacts :** La liste est triée par `lastContactActivity` décroissant.
 Mis à jour à chaque message envoyé/reçu et à chaque chargement d'historique.
+Persisté via `Preferences` (clé `"act:username:contact"`) — ordre conservé après redémarrage.
+
+**Notification nouveau groupe :** Au login, `knownGroupIds` est peuplé sans déclencher d'alerte.
+Tout groupe qui apparaît ensuite en cours de session bascule automatiquement le panel sur Groupes.
 
 ---
 

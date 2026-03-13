@@ -105,6 +105,8 @@ public class MessagingController {
     private final Map<String, Integer> unreadCounts = new HashMap<>();
     private final Map<String, List<Label>> sentCheckmarks = new HashMap<>();
     private final Map<String, Long> lastContactActivity = new HashMap<>();
+    private final java.util.Set<Long> knownGroupIds = new java.util.HashSet<>();
+    private boolean groupsInitialized = false; // true après le premier GROUP_LIST_UPDATE (login)
 
     private boolean isDarkTheme = true;
     private static final Preferences PREFS = Preferences.userRoot().node("elan-app");
@@ -315,13 +317,13 @@ public class MessagingController {
         if (isOwn) {
             if (selectedContactUsername != null && msg.getReceiver().equals(selectedContactUsername)) {
                 String statut = msg.getStatus() != null ? msg.getStatus() : "ENVOYE";
-                lastContactActivity.put(selectedContactUsername, System.currentTimeMillis());
+                updateActivity(selectedContactUsername);
                 addAndCache(selectedContactUsername, msg.getSender(), msg.getContent(), msg.getTimestamp(), true, false, statut);
             }
             return;
         }
         String sender = msg.getSender();
-        lastContactActivity.put(sender, System.currentTimeMillis());
+        updateActivity(sender);
         if (selectedContactUsername != null && sender.equals(selectedContactUsername)) {
             addAndCache(sender, sender, msg.getContent(), msg.getTimestamp(), false, false, null);
         } else {
@@ -333,6 +335,13 @@ public class MessagingController {
 
     private void onUserListUpdated(ChatMessage msg) {
         allUsers = msg.getUsers() != null ? msg.getUsers() : new ArrayList<>();
+        // Charger les timestamps persistés pour les contacts pas encore en mémoire
+        for (ChatMessage.UserInfo u : allUsers) {
+            if (!lastContactActivity.containsKey(u.username)) {
+                long stored = PREFS.getLong("act:" + currentUsername + ":" + u.username, 0L);
+                if (stored > 0) lastContactActivity.put(u.username, stored);
+            }
+        }
         filterContacts(searchField.getText());
         long online = allUsers.stream().filter(u -> "ONLINE".equals(u.status)).count();
         if (onlineCountLabel != null) onlineCountLabel.setText(online + " en ligne");
@@ -350,7 +359,7 @@ public class MessagingController {
         if (msg.getMessages() == null) return;
         String key = msg.getReceiver();
         if (!msg.getMessages().isEmpty()) {
-            lastContactActivity.put(key, System.currentTimeMillis());
+            updateActivity(key);
         }
         messagesContainer.getChildren().clear();
         sentCheckmarks.remove(key);
@@ -369,6 +378,21 @@ public class MessagingController {
     private void onGroupListUpdated(ChatMessage msg) {
         allGroups = msg.getGroups() != null ? msg.getGroups() : new ArrayList<>();
         groupListView.getItems().setAll(allGroups);
+
+        // Détecter les nouveaux groupes ajoutés EN COURS DE SESSION (pas au login initial)
+        boolean hasNewGroup = false;
+        for (ChatMessage.GroupInfo g : allGroups) {
+            if (knownGroupIds.add(g.id) && groupsInitialized) {
+                hasNewGroup = true;
+            }
+        }
+        groupsInitialized = true;
+
+        if (hasNewGroup && !panelGroups.isVisible()) {
+            showPanel(panelGroups);
+            setNavActive(navGroupBtn);
+            flashTitle("Vous avez été ajouté(e) à un groupe");
+        }
         if (selectedGroup != null) {
             allGroups.stream().filter(g -> g.id.equals(selectedGroup.id)).findFirst().ifPresent(g -> {
                 selectedGroup = g;
@@ -693,6 +717,15 @@ public class MessagingController {
             case "MEMBRE"       -> "\u25C6 Membre";
             default             -> "\u25CF Benevole";
         };
+    }
+
+    // --- Activité persistée ---
+    private void updateActivity(String contactKey) {
+        long now = System.currentTimeMillis();
+        lastContactActivity.put(contactKey, now);
+        if (currentUsername != null) {
+            PREFS.putLong("act:" + currentUsername + ":" + contactKey, now);
+        }
     }
 
     // --- Filtres ---
