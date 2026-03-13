@@ -44,7 +44,7 @@ jobs:
           mkdir -p target/installer
           EXTRA_OPTS=""
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            EXTRA_OPTS="--type msi --win-per-user-install --win-dir-chooser --win-shortcut --win-menu --win-menu-group Messagerie-ISI --verbose"
+            EXTRA_OPTS="--type msi --win-dir-chooser --win-shortcut --win-menu --win-menu-group Messagerie-ISI"
           fi
           jpackage \
             --name "Messagerie-ISI" \
